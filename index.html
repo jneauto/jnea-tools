@@ -215,6 +215,185 @@
   background: #f5f7fb;
 }
 
+.kf-controls
+{
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.kf-search-row
+{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.kf-filter-row
+{
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.kf-meta-row
+{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 2px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.kf-result-grid
+{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.kf-result-card,
+.kf-empty,
+.kf-loading,
+.kf-error
+{
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.kf-result-card
+{
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 190px;
+}
+
+.kf-result-title
+{
+  font-size: 17px;
+  line-height: 1.25;
+  margin: 0 0 8px;
+}
+
+.kf-result-title a
+{
+  color: #0193cf;
+  text-decoration: none;
+}
+
+.kf-result-title a:hover
+{
+  text-decoration: underline;
+}
+
+.kf-card-actions
+{
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.kf-btn-sm
+{
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #d1d5db;
+  color: #1f2937;
+  text-decoration: none;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.kf-btn-sm:hover
+{
+  background: #0193cf;
+  color: white;
+}
+
+.kf-result-file,
+.kf-details
+{
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.kf-result-file
+{
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.kf-chip-row
+{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+}
+
+.kf-chip
+{
+  display: inline-flex;
+  border-radius: 999px;
+  background: #eef6fb;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: #004b8d;
+  border: 1px solid #cfe8f6;
+}
+
+.kf-details
+{
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+}
+
+.kf-empty,
+.kf-loading,
+.kf-error
+{
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.kf-error
+{
+  color: #c62828;
+}
+
+@media (max-width: 850px)
+{
+  .kf-filter-row
+  {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+}
+
+@media (max-width: 560px)
+{
+  .kf-search-row
+  {
+    grid-template-columns: 1fr;
+  }
+
+  .kf-filter-row
+  {
+    grid-template-columns: 1fr;
+  }
+}    
+
 .as-percent-button
 {
   border: 1px solid #0193cf;
@@ -2111,6 +2290,428 @@ function fgEscapeHtml(value)
 function fgEscapeAttribute(value)
 {
   return fgEscapeHtml(value);
+}
+
+function wireKnowledgeFilesTool()
+{
+  const sheetId = "1nT-0iHAVjBNFUCQG4aTgULJvSs-DsF69HAUX0faNRz4";
+  const sheetName = "KF Files";
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+
+  let allFiles = [];
+
+  const els =
+  {
+    search: document.getElementById("kfSearchInput"),
+    clear: document.getElementById("kfClearBtn"),
+    category: document.getElementById("kfCategoryFilter"),
+    topic: document.getElementById("kfTopicFilter"),
+    docType: document.getElementById("kfDocTypeFilter"),
+    author: document.getElementById("kfAuthorFilter"),
+    sort: document.getElementById("kfSortSelect"),
+    results: document.getElementById("kfResults"),
+    count: document.getElementById("kfResultCount"),
+    lastUpdated: document.getElementById("kfLastUpdated")
+  };
+
+  function normalizeHeader(header)
+  {
+    return String(header || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toLowerCase();
+  }
+
+  function cellValue(cell)
+  {
+    if (!cell)
+    {
+      return "";
+    }
+
+    return String(cell.f || cell.v || "").trim();
+  }
+
+  function parseGoogleSheetJson(rawText)
+  {
+    const json = JSON.parse(rawText.substring(rawText.indexOf("{"), rawText.lastIndexOf("}") + 1));
+
+    let cols = json.table.cols.map(function (col)
+    {
+      return normalizeHeader(col.label);
+    });
+
+    let rows = json.table.rows;
+
+    const hasExpectedHeaders =
+      cols.includes("link") ||
+      cols.includes("fileid") ||
+      cols.includes("title");
+
+    if (!hasExpectedHeaders && rows.length)
+    {
+      cols = rows[0].c.map(function (cell)
+      {
+        return normalizeHeader(cellValue(cell));
+      });
+
+      rows = rows.slice(1);
+    }
+
+    return rows.map(function (row)
+    {
+      const item = {};
+
+      row.c.forEach(function (cell, index)
+      {
+        item[cols[index]] = cellValue(cell);
+      });
+
+      const rawLink = item.link || "";
+      const safeLink = /^https?:\/\//i.test(rawLink)
+        ? rawLink
+        : buildGoogleFileLink(item.fileid);
+
+      return {
+        link: safeLink,
+        folder: item.folder || "",
+        fileName: item.filename || "",
+        docType: item.doctype || "",
+        category: item.category || "",
+        topic: item.topic || "",
+        title: item.title || item.filename || "Untitled",
+        author: item.author || "",
+        releaseDate: item.releasedate || "",
+        fileId: item.fileid || "",
+        emailed: item.emailed || ""
+      };
+    }).filter(function (item)
+    {
+      return item.title && item.title.toLowerCase() !== "title";
+    });
+  }
+
+  function buildGoogleFileLink(fileId)
+  {
+    if (!fileId)
+    {
+      return "#";
+    }
+
+    return `https://drive.google.com/open?id=${encodeURIComponent(fileId)}`;
+  }
+
+  function hiddenValue(value)
+  {
+    return String(value || "").trim().startsWith("#");
+  }
+
+  function uniqueSorted(values)
+  {
+    return [...new Set(
+      values.filter(function (value)
+      {
+        if (!value)
+        {
+          return false;
+        }
+
+        return !String(value).trim().startsWith("#");
+      })
+    )].sort(function (a, b)
+    {
+      return a.localeCompare(b);
+    });
+  }
+
+  function fillSelect(select, values, defaultText)
+  {
+    const currentValue = select.value;
+    const options = uniqueSorted(values);
+
+    select.innerHTML = `<option value="">${escapeHtml(defaultText)}</option>`;
+
+    options.forEach(function (value)
+    {
+      const option = document.createElement("option");
+
+      option.value = value;
+      option.textContent = value;
+
+      select.appendChild(option);
+    });
+
+    select.value = options.includes(currentValue) ? currentValue : "";
+  }
+
+  function visibleFiles()
+  {
+    return allFiles.filter(function (file)
+    {
+      return (
+        !hiddenValue(file.category) &&
+        !hiddenValue(file.topic) &&
+        !hiddenValue(file.docType) &&
+        !hiddenValue(file.author)
+      );
+    });
+  }
+
+  function populateFilters(files)
+  {
+    const visible = files.filter(function (file)
+    {
+      return (
+        !hiddenValue(file.category) &&
+        !hiddenValue(file.topic) &&
+        !hiddenValue(file.docType) &&
+        !hiddenValue(file.author)
+      );
+    });
+
+    const categoryScoped = visible.filter(function (file)
+    {
+      return !els.category.value || file.category === els.category.value;
+    });
+
+    const topicScoped = categoryScoped.filter(function (file)
+    {
+      return !els.topic.value || file.topic === els.topic.value;
+    });
+
+    const docTypeScoped = topicScoped.filter(function (file)
+    {
+      return !els.docType.value || file.docType === els.docType.value;
+    });
+
+    fillSelect(els.category, visible.map(function (file)
+    {
+      return file.category;
+    }), "All categories");
+
+    fillSelect(els.topic, categoryScoped.map(function (file)
+    {
+      return file.topic;
+    }), "All topics");
+
+    fillSelect(els.docType, topicScoped.map(function (file)
+    {
+      return file.docType;
+    }), "All doc types");
+
+    fillSelect(els.author, docTypeScoped.map(function (file)
+    {
+      return file.author;
+    }), "All authors");
+  }
+
+  function matchesSearch(file, query)
+  {
+    if (!query)
+    {
+      return true;
+    }
+
+    const haystack =
+    [
+      file.title,
+      file.topic,
+      file.category,
+      file.docType,
+      file.folder,
+      file.fileName,
+      file.author
+    ].join(" ").toLowerCase();
+
+    return query.toLowerCase().split(/\s+/).every(function (term)
+    {
+      return haystack.includes(term);
+    });
+  }
+
+  function getFilteredFiles()
+  {
+    const query = els.search.value.trim();
+
+    populateFilters(allFiles);
+
+    const files = visibleFiles().filter(function (file)
+    {
+      return (
+        matchesSearch(file, query) &&
+        (!els.category.value || file.category === els.category.value) &&
+        (!els.topic.value || file.topic === els.topic.value) &&
+        (!els.docType.value || file.docType === els.docType.value) &&
+        (!els.author.value || file.author === els.author.value)
+      );
+    });
+
+    const sortMode = els.sort.value;
+
+    files.sort(function (a, b)
+    {
+      if (sortMode === "newest")
+      {
+        return new Date(b.releaseDate || 0) - new Date(a.releaseDate || 0);
+      }
+
+      if (sortMode === "categoryAsc")
+      {
+        return `${a.category} ${a.title}`.localeCompare(`${b.category} ${b.title}`);
+      }
+
+      if (sortMode === "authorAsc")
+      {
+        return `${a.author} ${a.title}`.localeCompare(`${b.author} ${b.title}`);
+      }
+
+      return a.title.localeCompare(b.title);
+    });
+
+    return files;
+  }
+
+  function renderResults()
+  {
+    const files = getFilteredFiles();
+
+    els.count.textContent = `${files.length} result${files.length === 1 ? "" : "s"} found`;
+
+    if (!files.length)
+    {
+      els.results.className = "";
+      els.results.innerHTML = `
+        <div class="kf-empty">
+          No knowledge files match your search.
+        </div>
+      `;
+
+      return;
+    }
+
+    els.results.className = "kf-result-grid";
+
+    els.results.innerHTML = files.map(function (file)
+    {
+      const type = String(file.docType).toLowerCase();
+
+      const service =
+        type.includes("slide") || type.includes("presentation")
+          ? "presentation"
+          : "document";
+
+      const baseUrl = `https://docs.google.com/${service}/d/${file.fileId}`;
+      const previewLink = `${baseUrl}/preview`;
+      const editLink = `${baseUrl}/edit`;
+
+      return `
+        <article class="kf-result-card">
+          <h2 class="kf-result-title">
+            <a
+              href="${escapeAttribute(previewLink)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Preview Link"
+            >
+              ${escapeHtml(file.title)}
+            </a>
+          </h2>
+
+          <div class="kf-card-actions">
+            <a
+              href="${escapeAttribute(file.link)}"
+              target="_blank"
+              class="kf-btn-sm"
+              title="Open Safe Link"
+            >
+              Open
+            </a>
+
+            <a
+              href="${escapeAttribute(editLink)}"
+              target="_blank"
+              class="kf-btn-sm"
+              title="Open in Edit Mode"
+            >
+              Edit
+            </a>
+          </div>
+
+          <div class="kf-result-file">
+            ${escapeHtml(file.fileName)}
+          </div>
+
+          <div class="kf-chip-row">
+            ${file.docType ? `<span class="kf-chip">${escapeHtml(file.docType)}</span>` : ""}
+            ${file.category ? `<span class="kf-chip">${escapeHtml(file.category)}</span>` : ""}
+            ${file.topic ? `<span class="kf-chip">${escapeHtml(file.topic)}</span>` : ""}
+          </div>
+
+          <div class="kf-details">
+            ${file.folder ? `<span><strong>Folder:</strong> ${escapeHtml(file.folder)}</span>` : ""}
+            ${file.author ? `<span><strong>Author:</strong> ${escapeHtml(file.author)}</span>` : ""}
+            ${file.releaseDate ? `<span><strong>Release:</strong> ${escapeHtml(file.releaseDate)}</span>` : ""}
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  async function loadFiles()
+  {
+    try
+    {
+      const response = await fetch(sheetUrl);
+
+      if (!response.ok)
+      {
+        throw new Error(`Sheet request failed: ${response.status}`);
+      }
+
+      const rawText = await response.text();
+
+      allFiles = parseGoogleSheetJson(rawText);
+
+      populateFilters(allFiles);
+      renderResults();
+
+      els.lastUpdated.textContent = `Loaded ${new Date().toLocaleString()}`;
+    }
+    catch (error)
+    {
+      console.error(error);
+
+      els.count.textContent = "Unable to load files";
+      els.results.className = "";
+      els.results.innerHTML = `
+        <div class="kf-error">
+          Could not load the Google Sheet. Confirm the sheet is shared with viewers and that the tab name is exactly "KF Files".
+        </div>
+      `;
+    }
+  }
+
+  [els.search, els.category, els.topic, els.docType, els.author, els.sort].forEach(function (el)
+  {
+    el.addEventListener("input", renderResults);
+    el.addEventListener("change", renderResults);
+  });
+
+  els.clear.addEventListener("click", function ()
+  {
+    els.search.value = "";
+    els.category.value = "";
+    els.topic.value = "";
+    els.docType.value = "";
+    els.author.value = "";
+    els.sort.value = "titleAsc";
+
+    renderResults();
+    els.search.focus();
+  });
+
+  loadFiles();
 }
       
 function renderKnowledgePlaceholder()
