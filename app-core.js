@@ -254,6 +254,7 @@
       </div>
     `;
   }
-
+  
+  window.renderDashboard = renderDashboard;
   init();
 })();
