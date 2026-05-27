@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>JNEA Tools</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link
+    rel="stylesheet"
+    href="https://jneauto.github.io/jnea_css/jnea-theme.css"
+  >
+
+  <style>
+    *
+    {
+      box-sizing: border-box;
+    }
+
+    body
+    {
+      margin: 0;
+      font-family: var(--jne-font, Arial, sans-serif);
+      background: var(--jne-bg, #f5f7fb);
+      color: var(--jne-text, #222);
+    }
+
+    .app-shell
+    {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar
+    {
+      width: 260px;
+      background: #13293d;
+      color: white;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo
+    {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .logo-subtitle
+    {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-bottom: 30px;
+    }
+
+    .nav-button
+    {
+      border: 0;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .nav-button:hover
+    {
+      background: rgba(255,255,255,0.16);
+    }
+
+    .main
+    {
+      flex: 1;
+      padding: 24px;
+    }
+
+    .topbar
+    {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .topbar-title
+    {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .user-box
+    {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logout-button
+    {
+      border: 0;
+      background: #d32f2f;
+      color: white;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .card
+    {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 18px;
+    }
+
+    .login-wrap
+    {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-card
+    {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    }
+
+    .login-title
+    {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle
+    {
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .form-group
+    {
+      margin-bottom: 16px;
+    }
+
+    .form-group label
+    {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .form-group input
+    {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .login-button
+    {
+      width: 100%;
+      border: 0;
+      background: #0193cf;
+      color: white;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .status
+    {
+      margin-top: 14px;
+      font-size: 14px;
+    }
+
+    .status.error
+    {
+      color: #c62828;
+    }
+
+    .status.good
+    {
+      color: #2e7d32;
+    }
+
+    @media (max-width: 900px)
+    {
+      .app-shell
+      {
+        flex-direction: column;
+      }
+
+      .sidebar
+      {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+
+  <script>
+    (function ()
+    {
+      const SUPABASE_URL = "https://xxvvvipivmfmqfeevqok.supabase.co";
+
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4dnZ2aXBpdm1mbXFmZWV2cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjUzNTMsImV4cCI6MjA5NTQ0MTM1M30.hLzj2g3RuRZRvssMG1tNg538ZdPfWHvofhMZta56lxA";
+
+      const sb = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {
+          auth:
+          {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: "jnea-tools-auth"
+          }
+        }
+      );
+
+      const app = document.getElementById("app");
+
+      let currentUser = null;
+
+      async function init()
+      {
+        const response = await sb.auth.getSession();
+
+        console.log("Session response:", response);
+
+        if (
+          response.error ||
+          !response.data ||
+          !response.data.session
+        )
+        {
+          renderLogin();
+          return;
+        }
+
+        currentUser = response.data.session.user;
+
+        console.log("Logged in user:", currentUser);
+
+        renderAppShell();
+        renderDashboard();
+      }
+
+      function renderLogin()
+      {
+        app.innerHTML = `
+          <div class="login-wrap">
+            <div class="login-card">
+              <div class="login-title">
+                JNEA Tools
+              </div>
+
+              <div class="login-subtitle">
+                Sign in to access engineering tools.
+              </div>
+
+              <div class="form-group">
+                <label>Email</label>
+
+                <input
+                  id="email"
+                  type="email"
+                  autocomplete="email"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>Password</label>
+
+                <input
+                  id="password"
+                  type="password"
+                  autocomplete="current-password"
+                >
+              </div>
+
+              <button
+                id="loginButton"
+                class="login-button"
+              >
+                Log In
+              </button>
+
+              <div
+                id="loginStatus"
+                class="status"
+              ></div>
+            </div>
+          </div>
+        `;
+
+        document
+          .getElementById("loginButton")
+          .addEventListener("click", handleLogin);
+      }
+
+      async function handleLogin()
+      {
+        const email = document
+          .getElementById("email")
+          .value
+          .trim();
+
+        const password = document
+          .getElementById("password")
+          .value;
+
+        const status = document.getElementById("loginStatus");
+
+        status.className = "status";
+        status.textContent = "Logging in...";
+
+        const response = await sb.auth.signInWithPassword(
+        {
+          email: email,
+          password: password
+        });
+
+        console.log("Login response:", response);
+
+        if (response.error)
+        {
+          status.className = "status error";
+          status.textContent = response.error.message;
+
+          console.error("Login error:", response.error);
+
+          return;
+        }
+
+        status.className = "status good";
+        status.textContent = "Login successful.";
+
+        currentUser = response.data.user;
+
+        renderAppShell();
+        renderDashboard();
+      }
+
+      async function handleLogout()
+      {
+        await sb.auth.signOut();
+
+        currentUser = null;
+
+        renderLogin();
+      }
+
+      function renderAppShell()
+      {
+        app.innerHTML = `
+          <div class="app-shell">
+            <div class="sidebar">
+              <div class="logo">
+                JNEA Tools
+              </div>
+
+              <div class="logo-subtitle">
+                Engineering Utility Platform
+              </div>
+
+              <button
+                class="nav-button"
+                id="navDashboard"
+              >
+                Dashboard
+              </button>
+
+              <button
+                class="nav-button"
+                id="navPlcCards"
+              >
+                PLC Card Fusing
+              </button>
+
+              <button
+                class="nav-button"
+                id="navFuseGuide"
+              >
+                Fuse Guide
+              </button>
+
+              <button
+                class="nav-button"
+                id="navKnowledge"
+              >
+                Knowledge Files
+              </button>
+            </div>
+
+            <div class="main">
+              <div class="topbar">
+                <div class="topbar-title" id="pageTitle">
+                  Dashboard
+                </div>
+
+                <div class="user-box">
+                  <div>
+                    ${currentUser.email}
+                  </div>
+
+                  <button
+                    id="logoutButton"
+                    class="logout-button"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              </div>
+
+              <div id="content"></div>
+            </div>
+          </div>
+        `;
+
+        document
+          .getElementById("logoutButton")
+          .addEventListener("click", handleLogout);
+
+        document
+          .getElementById("navDashboard")
+          .addEventListener("click", renderDashboard);
+
+        document
+          .getElementById("navPlcCards")
+          .addEventListener("click", renderPlcCardsPlaceholder);
+
+        document
+          .getElementById("navFuseGuide")
+          .addEventListener("click", renderFuseGuidePlaceholder);
+
+        document
+          .getElementById("navKnowledge")
+          .addEventListener("click", renderKnowledgePlaceholder);
+      }
+
+      function renderDashboard()
+      {
+        document.getElementById("pageTitle").textContent = "Dashboard";
+
+        document.getElementById("content").innerHTML = `
+          <div class="card">
+            <h2>
+              Welcome to JNEA Tools
+            </h2>
+
+            <p>
+              You are now connected to Supabase successfully.
+            </p>
+
+            <p>
+              Logged in as:
+              <strong>${currentUser.email}</strong>
+            </p>
+          </div>
+
+          <div class="card">
+            <h3>
+              Available Modules
+            </h3>
+
+            <ul>
+              <li>PLC Card Fusing</li>
+              <li>Fuse Selection</li>
+              <li>Knowledge Files</li>
+              <li>Terminal Block Selector</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      function renderPlcCardsPlaceholder()
+      {
+        document.getElementById("pageTitle").textContent = "PLC Card Fusing";
+
+        document.getElementById("content").innerHTML = `
+          <div class="card">
+            <h2>
+              PLC Card Fusing
+            </h2>
+
+            <p>
+              PLC card search module will go here next.
+            </p>
+          </div>
+        `;
+      }
+
+      function renderFuseGuidePlaceholder()
+      {
+        document.getElementById("pageTitle").textContent = "Fuse Guide";
+
+        document.getElementById("content").innerHTML = `
+          <div class="card">
+            <h2>
+              Fuse Guide
+            </h2>
+
+            <p>
+              Fuse guide module placeholder.
+            </p>
+          </div>
+        `;
+      }
+
+      function renderKnowledgePlaceholder()
+      {
+        document.getElementById("pageTitle").textContent = "Knowledge Files";
+
+        document.getElementById("content").innerHTML = `
+          <div class="card">
+            <h2>
+              Knowledge Files
+            </h2>
+
+            <p>
+              Knowledge files module placeholder.
+            </p>
+          </div>
+        `;
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
