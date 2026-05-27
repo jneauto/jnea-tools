@@ -14,20 +14,22 @@ function renderKnowledgePlaceholder()
         Search how-to documents by topic, category, file type, or author.
       </p>
 
+      <div id="kfAdminRow" class="kf-admin-row" style="display:none;">
+        <button id="kfAddBtn" class="login-button" type="button" style="width:auto;">
+          Add Knowledge File
+        </button>
+      </div>
+
       <div class="kf-controls">
         <div class="kf-search-row">
           <input
             id="kfSearchInput"
             class="tool-input"
             type="search"
-            placeholder="Search knowledge files... e.g. AutoCAD, PlantPAx, loop drawings"
+            placeholder="Search knowledge files..."
           >
 
-          <button
-            id="kfClearBtn"
-            class="login-button"
-            type="button"
-          >
+          <button id="kfClearBtn" class="login-button" type="button">
             Clear
           </button>
         </div>
@@ -67,6 +69,61 @@ function renderKnowledgePlaceholder()
         <div class="kf-loading">Loading knowledge files...</div>
       </section>
     </div>
+
+    <dialog id="kfDialog" class="kf-dialog">
+      <form id="kfForm" class="kf-dialog-body" method="dialog">
+        <h2 id="kfDialogTitle" style="margin-top:0;">
+          Add Knowledge File
+        </h2>
+
+        <input id="kfId" type="hidden">
+
+        <div class="form-group">
+          <label for="kfFiletype">File Type</label>
+          <select id="kfFiletype" class="tool-select" required>
+            <option value="document">document</option>
+            <option value="presentation">presentation</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="kfCategory">Category</label>
+          <input id="kfCategory" class="tool-input" type="text" required>
+        </div>
+
+        <div class="form-group">
+          <label for="kfTopic">Topic</label>
+          <input id="kfTopic" class="tool-input" type="text" required>
+        </div>
+
+        <div class="form-group">
+          <label for="kfAuthor">Author</label>
+          <input id="kfAuthor" class="tool-input" type="text">
+        </div>
+
+        <div class="form-group">
+          <label for="kfReleaseDate">Release Date</label>
+          <input id="kfReleaseDate" class="tool-input" type="date">
+        </div>
+
+        <div class="form-group">
+          <label for="kfGid">Google ID or Google Link</label>
+          <input id="kfGid" class="tool-input" type="text" required>
+        </div>
+
+        <div id="kfDialogStatus" class="status"></div>
+
+        <div class="kf-dialog-actions">
+          <button id="kfCancelBtn" class="kf-secondary-button" type="button">
+            Cancel
+          </button>
+
+          <button class="login-button" type="submit" style="width:auto;">
+            Save
+          </button>
+        </div>
+      </form>
+    </dialog>
   `;
 
   wireKnowledgeFilesTool();
@@ -77,9 +134,12 @@ function wireKnowledgeFilesTool()
   const sb = window.jnea.sb;
 
   let allFiles = [];
+  let isAdmin = false;
 
   const els =
   {
+    adminRow: document.getElementById("kfAdminRow"),
+    add: document.getElementById("kfAddBtn"),
     search: document.getElementById("kfSearchInput"),
     clear: document.getElementById("kfClearBtn"),
     category: document.getElementById("kfCategoryFilter"),
@@ -89,12 +149,45 @@ function wireKnowledgeFilesTool()
     sort: document.getElementById("kfSortSelect"),
     results: document.getElementById("kfResults"),
     count: document.getElementById("kfResultCount"),
-    lastUpdated: document.getElementById("kfLastUpdated")
+    lastUpdated: document.getElementById("kfLastUpdated"),
+    dialog: document.getElementById("kfDialog"),
+    form: document.getElementById("kfForm"),
+    dialogTitle: document.getElementById("kfDialogTitle"),
+    id: document.getElementById("kfId"),
+    filetype: document.getElementById("kfFiletype"),
+    categoryInput: document.getElementById("kfCategory"),
+    topicInput: document.getElementById("kfTopic"),
+    authorInput: document.getElementById("kfAuthor"),
+    releaseDateInput: document.getElementById("kfReleaseDate"),
+    gidInput: document.getElementById("kfGid"),
+    dialogStatus: document.getElementById("kfDialogStatus"),
+    cancel: document.getElementById("kfCancelBtn")
   };
 
   function hiddenValue(value)
   {
     return String(value || "").trim().startsWith("#");
+  }
+
+  function extractGoogleId(value)
+  {
+    const text = String(value || "").trim();
+
+    const match = text.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
+    if (match && match[1])
+    {
+      return match[1];
+    }
+
+    const idMatch = text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+    if (idMatch && idMatch[1])
+    {
+      return idMatch[1];
+    }
+
+    return text;
   }
 
   function uniqueSorted(values)
@@ -253,24 +346,80 @@ function wireKnowledgeFilesTool()
     return files;
   }
 
-  function getPreviewLink(file)
+  function openDialog(file)
   {
-    if (!file.weblink)
+    els.dialogStatus.className = "status";
+    els.dialogStatus.textContent = "";
+
+    if (file)
     {
-      return "#";
+      els.dialogTitle.textContent = "Edit Knowledge File";
+      els.id.value = file.id;
+      els.filetype.value = file.filetype || "document";
+      els.categoryInput.value = file.category || "";
+      els.topicInput.value = file.topic || "";
+      els.authorInput.value = file.author || "";
+      els.releaseDateInput.value = file.releasedate || "";
+      els.gidInput.value = file.gid || "";
+    }
+    else
+    {
+      els.dialogTitle.textContent = "Add Knowledge File";
+      els.id.value = "";
+      els.filetype.value = "document";
+      els.categoryInput.value = "";
+      els.topicInput.value = "";
+      els.authorInput.value = "";
+      els.releaseDateInput.value = new Date().toISOString().slice(0, 10);
+      els.gidInput.value = "";
     }
 
-    return `${file.weblink}/preview`;
+    els.dialog.showModal();
   }
 
-  function getEditLink(file)
+  async function saveDialog()
   {
-    if (!file.weblink)
+    const id = els.id.value;
+
+    const payload =
     {
-      return "#";
+      filetype: els.filetype.value,
+      category: els.categoryInput.value.trim(),
+      topic: els.topicInput.value.trim(),
+      author: els.authorInput.value.trim(),
+      releasedate: els.releaseDateInput.value || null,
+      gid: extractGoogleId(els.gidInput.value)
+    };
+
+    els.dialogStatus.className = "status";
+    els.dialogStatus.textContent = "Saving...";
+
+    let response;
+
+    if (id)
+    {
+      response = await sb
+        .from("knowledgefiles")
+        .update(payload)
+        .eq("id", id);
+    }
+    else
+    {
+      response = await sb
+        .from("knowledgefiles")
+        .insert(payload);
     }
 
-    return `${file.weblink}/edit`;
+    if (response.error)
+    {
+      els.dialogStatus.className = "status error";
+      els.dialogStatus.textContent = response.error.message;
+      return;
+    }
+
+    els.dialog.close();
+
+    await loadFiles();
   }
 
   function renderResults()
@@ -296,8 +445,8 @@ function wireKnowledgeFilesTool()
     els.results.innerHTML = files.map(function (file)
     {
       const title = file.topic || file.category || "Knowledge File";
-      const previewLink = getPreviewLink(file);
-      const editLink = getEditLink(file);
+      const previewLink = file.weblink ? `${file.weblink}/preview` : "#";
+      const editLink = file.weblink ? `${file.weblink}/edit` : "#";
 
       return `
         <article class="kf-result-card">
@@ -306,7 +455,6 @@ function wireKnowledgeFilesTool()
               href="${escapeAttribute(previewLink)}"
               target="_blank"
               rel="noopener noreferrer"
-              title="Open preview"
             >
               ${escapeHtml(title)}
             </a>
@@ -318,7 +466,6 @@ function wireKnowledgeFilesTool()
               target="_blank"
               rel="noopener noreferrer"
               class="kf-btn-sm"
-              title="Open file"
             >
               Open
             </a>
@@ -328,10 +475,24 @@ function wireKnowledgeFilesTool()
               target="_blank"
               rel="noopener noreferrer"
               class="kf-btn-sm"
-              title="Open in edit mode"
             >
-              Edit
+              Edit File
             </a>
+
+            ${
+              isAdmin
+                ? `
+                  <button
+                    class="kf-btn-sm"
+                    type="button"
+                    data-kf-edit-id="${escapeAttribute(file.id)}"
+                    style="border:0;cursor:pointer;"
+                  >
+                    Edit Record
+                  </button>
+                `
+                : ""
+            }
           </div>
 
           <div class="kf-chip-row">
@@ -343,11 +504,44 @@ function wireKnowledgeFilesTool()
           <div class="kf-details">
             ${file.author ? `<span><strong>Author:</strong> ${escapeHtml(file.author)}</span>` : ""}
             ${file.releasedate ? `<span><strong>Release:</strong> ${escapeHtml(file.releasedate)}</span>` : ""}
-            ${file.gid ? `<span><strong>Google ID:</strong> ${escapeHtml(file.gid)}</span>` : ""}
           </div>
         </article>
       `;
     }).join("");
+
+    document.querySelectorAll("[data-kf-edit-id]").forEach(function (button)
+    {
+      button.addEventListener("click", function ()
+      {
+        const file = allFiles.find(function (item)
+        {
+          return String(item.id) === String(button.dataset.kfEditId);
+        });
+
+        openDialog(file);
+      });
+    });
+  }
+
+  async function checkAdmin()
+  {
+    const user = window.jnea.getCurrentUser();
+
+    if (!user)
+    {
+      isAdmin = false;
+      return;
+    }
+
+    const response = await sb
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+
+    isAdmin = !response.error && response.data && response.data.is_admin === true;
+
+    els.adminRow.style.display = isAdmin ? "flex" : "none";
   }
 
   async function loadFiles()
@@ -374,8 +568,6 @@ function wireKnowledgeFilesTool()
     }
     catch (error)
     {
-      console.error("Knowledge files load error:", error);
-
       els.count.textContent = "Unable to load files";
       els.results.className = "";
       els.results.innerHTML = `
@@ -414,5 +606,21 @@ function wireKnowledgeFilesTool()
     els.search.focus();
   });
 
-  loadFiles();
+  els.add.addEventListener("click", function ()
+  {
+    openDialog(null);
+  });
+
+  els.cancel.addEventListener("click", function ()
+  {
+    els.dialog.close();
+  });
+
+  els.form.addEventListener("submit", function (event)
+  {
+    event.preventDefault();
+    saveDialog();
+  });
+
+  checkAdmin().then(loadFiles);
 }
