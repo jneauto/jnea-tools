@@ -1,0 +1,30 @@
+*
+{
+  box-sizing: border-box;
+}
+
+body
+{
+  margin: 0;
+  font-family: var(--jne-font, Arial, sans-serif);
+  background: var(--jne-bg, #f5f7fb);
+  color: var(--jne-text, #222);
+}
+
+.app-shell
+{
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar
+{
+  width: 260px;
+  background: #13293d;
+  color: white;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* paste the full contents of your existing <style> block here */
