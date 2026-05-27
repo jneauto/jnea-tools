@@ -1268,20 +1268,33 @@ function renderFuseGuideTool(questions, fuses, holders, rules)
       return;
     }
 
-    const visibleQuestions = fgGetQuestionsForApplication(questions, selectedApplication)
-      .filter(function (question)
+    const allQuestions = fgGetQuestionsForApplication(questions, selectedApplication);
+    
+    allQuestions.forEach(function (question)
+    {
+      const questionId = question.questionid;
+    
+      if (
+        typeof answers[questionId] === "undefined" ||
+        answers[questionId] === null ||
+        answers[questionId] === ""
+      )
       {
-        return fgQuestionIsVisible(question, answers);
-      });
+        answers[questionId] = question.defaultvalue ?? "";
+      }
+    });
+    
+    const visibleQuestions = allQuestions.filter(function (question)
+    {
+      return fgQuestionIsVisible(question, answers);
+    });
 
     area.innerHTML = `
       ${visibleQuestions.map(function (question)
       {
         const questionId = question.questionid;
         const options = fgSplitList(question.options);
-        const value = answers[questionId] ?? question.defaultvalue ?? "";
-
-        answers[questionId] = value;
+        const value = answers[questionId] ?? "";
 
         if (question.type === "select")
         {
