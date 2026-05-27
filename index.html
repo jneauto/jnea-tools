@@ -8,6 +8,8 @@
     content="width=device-width, initial-scale=1.0"
   >
 
+  <link rel="icon" href="data:,">
+
   <title>JNEA Tools</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -495,7 +497,7 @@
 
         document
           .getElementById("navFuseGuide")
-          .addEventListener("click", renderFuseGuideTool);
+          .addEventListener("click", renderFuseGuidePlaceholder);
 
         document
           .getElementById("navKnowledge")
@@ -1112,6 +1114,82 @@ function escapeHtml(value)
 function escapeAttribute(value)
 {
   return escapeHtml(value);
+}
+
+async function renderFuseGuidePlaceholder()
+{
+  document.getElementById("pageTitle").textContent = "Fuse Guide";
+
+  const content = document.getElementById("content");
+
+  content.innerHTML = `
+    <div class="card">
+      Loading fuse guide...
+    </div>
+  `;
+
+  try
+  {
+    const questionsResponse = await sb
+      .from("questions")
+      .select("*")
+      .order("questionorder");
+
+    const fuseResponse = await sb
+      .from("fusecatalog")
+      .select("*");
+
+    const holderResponse = await sb
+      .from("fuseholdercatalog")
+      .select("*");
+
+    const rulesResponse = await sb
+      .from("rules")
+      .select("*");
+
+    if (questionsResponse.error)
+    {
+      throw questionsResponse.error;
+    }
+
+    if (fuseResponse.error)
+    {
+      throw fuseResponse.error;
+    }
+
+    if (holderResponse.error)
+    {
+      throw holderResponse.error;
+    }
+
+    if (rulesResponse.error)
+    {
+      throw rulesResponse.error;
+    }
+
+    renderFuseGuideTool(
+      questionsResponse.data || [],
+      fuseResponse.data || [],
+      holderResponse.data || [],
+      rulesResponse.data || []
+    );
+  }
+  catch (err)
+  {
+    console.error("Fuse guide load error:", err);
+
+    content.innerHTML = `
+      <div class="card">
+        <h2>Fuse Guide</h2>
+
+        <div style="color:#c62828;font-weight:bold;">
+          Could not load fuse guide data.
+        </div>
+
+        <pre>${err.message}</pre>
+      </div>
+    `;
+  }
 }
 
 function renderFuseGuideTool(questions, fuses, holders, rules)
