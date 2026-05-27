@@ -2113,22 +2113,79 @@ function fgEscapeAttribute(value)
   return fgEscapeHtml(value);
 }
       
-      function renderKnowledgePlaceholder()
-      {
-        document.getElementById("pageTitle").textContent = "Knowledge Files";
+function renderKnowledgePlaceholder()
+{
+  document.getElementById("pageTitle").textContent = "Knowledge Files";
 
-        document.getElementById("content").innerHTML = `
-          <div class="card">
-            <h2>
-              Knowledge Files
-            </h2>
+  const content = document.getElementById("content");
 
-            <p>
-              Knowledge files module placeholder.
-            </p>
-          </div>
-        `;
-      }
+  content.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">
+        Knowledge Files
+      </h2>
+
+      <p>
+        Search how-to documents by title, topic, category, file type, folder, or author.
+      </p>
+
+      <div class="kf-controls">
+        <div class="kf-search-row">
+          <input
+            id="kfSearchInput"
+            class="tool-input"
+            type="search"
+            placeholder="Search knowledge files... e.g. AutoCAD, PlantPAx, loop drawings"
+          >
+
+          <button
+            id="kfClearBtn"
+            class="login-button"
+            type="button"
+          >
+            Clear
+          </button>
+        </div>
+
+        <div class="kf-filter-row">
+          <select id="kfCategoryFilter" class="tool-select">
+            <option value="">All categories</option>
+          </select>
+
+          <select id="kfTopicFilter" class="tool-select">
+            <option value="">All topics</option>
+          </select>
+
+          <select id="kfDocTypeFilter" class="tool-select">
+            <option value="">All doc types</option>
+          </select>
+
+          <select id="kfAuthorFilter" class="tool-select">
+            <option value="">All authors</option>
+          </select>
+
+          <select id="kfSortSelect" class="tool-select">
+            <option value="titleAsc">Sort: Title A-Z</option>
+            <option value="categoryAsc">Sort: Category A-Z</option>
+            <option value="newest">Sort: Newest release</option>
+            <option value="authorAsc">Sort: Author A-Z</option>
+          </select>
+        </div>
+
+        <div class="kf-meta-row">
+          <span id="kfResultCount">Loading files...</span>
+          <span id="kfLastUpdated"></span>
+        </div>
+      </div>
+
+      <section id="kfResults" class="kf-result-grid" aria-live="polite">
+        <div class="kf-loading">Loading knowledge files...</div>
+      </section>
+    </div>
+  `;
+
+  wireKnowledgeFilesTool();
+}
 
       function renderAnalogScaleTool()
 {
