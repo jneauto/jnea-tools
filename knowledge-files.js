@@ -11,7 +11,7 @@ function renderKnowledgePlaceholder()
       </h2>
 
       <p>
-        Search how-to documents by title, topic, category, file type, folder, or author.
+        Search how-to documents by topic, category, file type, or author.
       </p>
 
       <div class="kf-controls">
@@ -42,7 +42,7 @@ function renderKnowledgePlaceholder()
           </select>
 
           <select id="kfDocTypeFilter" class="tool-select">
-            <option value="">All doc types</option>
+            <option value="">All file types</option>
           </select>
 
           <select id="kfAuthorFilter" class="tool-select">
@@ -50,7 +50,7 @@ function renderKnowledgePlaceholder()
           </select>
 
           <select id="kfSortSelect" class="tool-select">
-            <option value="titleAsc">Sort: Title A-Z</option>
+            <option value="topicAsc">Sort: Topic A-Z</option>
             <option value="categoryAsc">Sort: Category A-Z</option>
             <option value="newest">Sort: Newest release</option>
             <option value="authorAsc">Sort: Author A-Z</option>
@@ -100,10 +100,15 @@ function wireKnowledgeFilesTool()
   function uniqueSorted(values)
   {
     return [...new Set(
-      values.filter(function (value)
-      {
-        return value && !hiddenValue(value);
-      })
+      values
+        .map(function (value)
+        {
+          return String(value || "").trim();
+        })
+        .filter(function (value)
+        {
+          return value && !hiddenValue(value);
+        })
     )].sort(function (a, b)
     {
       return a.localeCompare(b);
@@ -143,17 +148,9 @@ function wireKnowledgeFilesTool()
     });
   }
 
-  function populateFilters(files)
+  function populateFilters()
   {
-    const visible = files.filter(function (file)
-    {
-      return (
-        !hiddenValue(file.category) &&
-        !hiddenValue(file.topic) &&
-        !hiddenValue(file.filetype) &&
-        !hiddenValue(file.author)
-      );
-    });
+    const visible = visibleFiles();
 
     const categoryScoped = visible.filter(function (file)
     {
@@ -165,7 +162,7 @@ function wireKnowledgeFilesTool()
       return !els.topic.value || file.topic === els.topic.value;
     });
 
-    const docTypeScoped = topicScoped.filter(function (file)
+    const fileTypeScoped = topicScoped.filter(function (file)
     {
       return !els.docType.value || file.filetype === els.docType.value;
     });
@@ -183,9 +180,9 @@ function wireKnowledgeFilesTool()
     fillSelect(els.docType, topicScoped.map(function (file)
     {
       return file.filetype;
-    }), "All doc types");
+    }), "All file types");
 
-    fillSelect(els.author, docTypeScoped.map(function (file)
+    fillSelect(els.author, fileTypeScoped.map(function (file)
     {
       return file.author;
     }), "All authors");
@@ -218,7 +215,7 @@ function wireKnowledgeFilesTool()
   {
     const query = els.search.value.trim();
 
-    populateFilters(allFiles);
+    populateFilters();
 
     const files = visibleFiles().filter(function (file)
     {
@@ -242,18 +239,38 @@ function wireKnowledgeFilesTool()
 
       if (sortMode === "categoryAsc")
       {
-        return `${a.category} ${a.topic}`.localeCompare(`${b.category} ${b.topic}`);
+        return `${a.category || ""} ${a.topic || ""}`.localeCompare(`${b.category || ""} ${b.topic || ""}`);
       }
 
       if (sortMode === "authorAsc")
       {
-        return `${a.author} ${a.topic}`.localeCompare(`${b.author} ${b.topic}`);
+        return `${a.author || ""} ${a.topic || ""}`.localeCompare(`${b.author || ""} ${b.topic || ""}`);
       }
 
-      return `${a.topic} ${a.category}`.localeCompare(`${b.topic} ${b.category}`);
+      return `${a.topic || ""} ${a.category || ""}`.localeCompare(`${b.topic || ""} ${b.category || ""}`);
     });
 
     return files;
+  }
+
+  function getPreviewLink(file)
+  {
+    if (!file.weblink)
+    {
+      return "#";
+    }
+
+    return `${file.weblink}/preview`;
+  }
+
+  function getEditLink(file)
+  {
+    if (!file.weblink)
+    {
+      return "#";
+    }
+
+    return `${file.weblink}/edit`;
   }
 
   function renderResults()
@@ -279,8 +296,8 @@ function wireKnowledgeFilesTool()
     els.results.innerHTML = files.map(function (file)
     {
       const title = file.topic || file.category || "Knowledge File";
-      const editLink = file.weblink ? `${file.weblink}/edit` : "#";
-      const previewLink = file.weblink ? `${file.weblink}/preview` : "#";
+      const previewLink = getPreviewLink(file);
+      const editLink = getEditLink(file);
 
       return `
         <article class="kf-result-card">
@@ -289,7 +306,7 @@ function wireKnowledgeFilesTool()
               href="${escapeAttribute(previewLink)}"
               target="_blank"
               rel="noopener noreferrer"
-              title="Open Preview Link"
+              title="Open preview"
             >
               ${escapeHtml(title)}
             </a>
@@ -299,8 +316,9 @@ function wireKnowledgeFilesTool()
             <a
               href="${escapeAttribute(file.weblink || "#")}"
               target="_blank"
+              rel="noopener noreferrer"
               class="kf-btn-sm"
-              title="Open Link"
+              title="Open file"
             >
               Open
             </a>
@@ -308,8 +326,9 @@ function wireKnowledgeFilesTool()
             <a
               href="${escapeAttribute(editLink)}"
               target="_blank"
+              rel="noopener noreferrer"
               class="kf-btn-sm"
-              title="Open in Edit Mode"
+              title="Open in edit mode"
             >
               Edit
             </a>
@@ -324,6 +343,7 @@ function wireKnowledgeFilesTool()
           <div class="kf-details">
             ${file.author ? `<span><strong>Author:</strong> ${escapeHtml(file.author)}</span>` : ""}
             ${file.releasedate ? `<span><strong>Release:</strong> ${escapeHtml(file.releasedate)}</span>` : ""}
+            ${file.gid ? `<span><strong>Google ID:</strong> ${escapeHtml(file.gid)}</span>` : ""}
           </div>
         </article>
       `;
@@ -337,7 +357,8 @@ function wireKnowledgeFilesTool()
       const response = await sb
         .from("v_knowledgefiles")
         .select("*")
-        .order("category");
+        .order("category", { ascending: true })
+        .order("topic", { ascending: true });
 
       if (response.error)
       {
@@ -346,26 +367,35 @@ function wireKnowledgeFilesTool()
 
       allFiles = response.data || [];
 
-      populateFilters(allFiles);
+      populateFilters();
       renderResults();
 
       els.lastUpdated.textContent = `Loaded ${new Date().toLocaleString()}`;
     }
     catch (error)
     {
-      console.error(error);
+      console.error("Knowledge files load error:", error);
 
       els.count.textContent = "Unable to load files";
       els.results.className = "";
       els.results.innerHTML = `
         <div class="kf-error">
           Could not load knowledge files from Supabase.
+          <br>
+          ${escapeHtml(error.message || "")}
         </div>
       `;
     }
   }
 
-  [els.search, els.category, els.topic, els.docType, els.author, els.sort].forEach(function (el)
+  [
+    els.search,
+    els.category,
+    els.topic,
+    els.docType,
+    els.author,
+    els.sort
+  ].forEach(function (el)
   {
     el.addEventListener("input", renderResults);
     el.addEventListener("change", renderResults);
@@ -378,7 +408,7 @@ function wireKnowledgeFilesTool()
     els.topic.value = "";
     els.docType.value = "";
     els.author.value = "";
-    els.sort.value = "titleAsc";
+    els.sort.value = "topicAsc";
 
     renderResults();
     els.search.focus();
