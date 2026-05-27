@@ -1,0 +1,2718 @@
+(function ()
+{
+    (function ()
+    {
+      const SUPABASE_URL = "https://xxvvvipivmfmqfeevqok.supabase.co";
+
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4dnZ2aXBpdm1mbXFmZWV2cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjUzNTMsImV4cCI6MjA5NTQ0MTM1M30.hLzj2g3RuRZRvssMG1tNg538ZdPfWHvofhMZta56lxA";
+
+      const sb = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {
+          auth:
+          {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: "jnea-tools-auth"
+          }
+        }
+      );
+
+      const app = document.getElementById("app");
+
+      let currentUser = null;
+
+      async function init()
+      {
+        const response = await sb.auth.getSession();
+
+        console.log("Session response:", response);
+
+        if (
+          response.error ||
+          !response.data ||
+          !response.data.session
+        )
+        {
+          renderLogin();
+          return;
+        }
+
+        currentUser = response.data.session.user;
+
+        console.log("Logged in user:", currentUser);
+
+        renderAppShell();
+        renderDashboard();
+      }
+
+      function renderLogin()
+      {
+        app.innerHTML = `
+          <div class="login-wrap">
+            <div class="login-card">
+              <div class="login-title">
+                JNEA Tools
+              </div>
+
+              <div class="login-subtitle">
+                Sign in to access engineering tools.
+              </div>
+
+              <div class="form-group">
+                <label>Email</label>
+
+                <input
+                  id="email"
+                  type="email"
+                  autocomplete="email"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>Password</label>
+
+                <input
+                  id="password"
+                  type="password"
+                  autocomplete="current-password"
+                >
+              </div>
+
+              <button
+                id="loginButton"
+                class="login-button"
+              >
+                Log In
+              </button>
+
+              <div
+                id="loginStatus"
+                class="status"
+              ></div>
+            </div>
+          </div>
+        `;
+
+        document
+          .getElementById("loginButton")
+          .addEventListener("click", handleLogin);
+      }
+
+      async function handleLogin()
+      {
+        const email = document
+          .getElementById("email")
+          .value
+          .trim();
+
+        const password = document
+          .getElementById("password")
+          .value;
+
+        const status = document.getElementById("loginStatus");
+
+        status.className = "status";
+        status.textContent = "Logging in...";
+
+        const response = await sb.auth.signInWithPassword(
+        {
+          email: email,
+          password: password
+        });
+
+        console.log("Login response:", response);
+
+        if (response.error)
+        {
+          status.className = "status error";
+          status.textContent = response.error.message;
+
+          console.error("Login error:", response.error);
+
+          return;
+        }
+
+        status.className = "status good";
+        status.textContent = "Login successful.";
+
+        currentUser = response.data.user;
+
+        renderAppShell();
+        renderDashboard();
+      }
+
+      async function handleLogout()
+      {
+        await sb.auth.signOut();
+
+        currentUser = null;
+
+        renderLogin();
+      }
+
+      function renderAppShell()
+      {
+        app.innerHTML = `
+          <div class="app-shell">
+            <div class="sidebar">
+              <div class="logo">
+                JNEA Tools
+              </div>
+
+              <div class="logo-subtitle">
+                Engineering Utility Platform
+              </div>
+
+              <button
+                class="nav-button"
+                id="navDashboard"
+              >
+                Dashboard
+              </button>
+
+              <button
+                class="nav-button"
+                id="navPlcCards"
+              >
+                PLC Card Fusing
+              </button>
+
+              <button
+                class="nav-button"
+                id="navFuseGuide"
+              >
+                Fuse Guide
+              </button>
+
+              <button
+                class="nav-button"
+                id="navKnowledge"
+              >
+                Knowledge Files
+              </button>
+
+              <button
+                class="nav-button"
+                id="navAnalogScale"
+              >
+                Analog Scaling
+              </button>
+
+            </div>
+
+            <div class="main">
+              <div class="topbar">
+                <div class="topbar-title" id="pageTitle">
+                  Dashboard
+                </div>
+
+                <div class="user-box">
+                  <div>
+                    ${currentUser.email}
+                  </div>
+
+                  <button
+                    id="logoutButton"
+                    class="logout-button"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              </div>
+
+              <div id="content"></div>
+            </div>
+          </div>
+        `;
+
+        document
+          .getElementById("logoutButton")
+          .addEventListener("click", handleLogout);
+
+        document
+          .getElementById("navDashboard")
+          .addEventListener("click", renderDashboard);
+
+        document
+          .getElementById("navPlcCards")
+          .addEventListener("click", renderPlcCardsPlaceholder);
+
+        document
+          .getElementById("navFuseGuide")
+          .addEventListener("click", renderFuseGuidePlaceholder);
+
+        document
+          .getElementById("navKnowledge")
+          .addEventListener("click", renderKnowledgePlaceholder);
+
+        document
+          .getElementById("navAnalogScale")
+          .addEventListener("click", renderAnalogScaleTool);
+      }
+
+      function renderDashboard()
+      {
+        document.getElementById("pageTitle").textContent = "Dashboard";
+
+        document.getElementById("content").innerHTML = `
+          <div class="card">
+            <h2>
+              Welcome to JNEA Tools
+            </h2>
+
+            <p>
+              You are now connected to Supabase successfully.
+            </p>
+
+            <p>
+              Logged in as:
+              <strong>${currentUser.email}</strong>
+            </p>
+          </div>
+
+          <div class="card">
+            <h3>
+              Available Modules
+            </h3>
+
+            <ul>
+              <li>PLC Card Fusing</li>
+              <li>Fuse Selection</li>
+              <li>Knowledge Files</li>
+              <li>Terminal Block Selector</li>
+              <li>Analog Scaling</li>
+            </ul>
+          </div>
+        `;
+      }
+
+async function renderPlcCardsPlaceholder()
+{
+  document.getElementById("pageTitle").textContent = "PLC Card Fusing";
+
+  const content = document.getElementById("content");
+
+  content.innerHTML = `
+    <div class="card">
+      Loading PLC card database...
+    </div>
+  `;
+
+  try
+  {
+    const plcResponse = await sb
+      .from("plccards")
+      .select("*")
+      .order("cardpartnumber");
+
+    if (plcResponse.error)
+    {
+      throw plcResponse.error;
+    }
+
+    const fuseHolderResponse = await sb
+      .from("fuseholdercatalog")
+      .select("*");
+
+    if (fuseHolderResponse.error)
+    {
+      throw fuseHolderResponse.error;
+    }
+
+    const fuseResponse = await sb
+      .from("fusecatalog")
+      .select("*");
+
+    if (fuseResponse.error)
+    {
+      throw fuseResponse.error;
+    }
+
+    renderPlcTool(
+      plcResponse.data || [],
+      fuseHolderResponse.data || [],
+      fuseResponse.data || []
+    );
+  }
+  catch (err)
+  {
+    console.error("PLC card load error:", err);
+
+    content.innerHTML = `
+      <div class="card">
+        <h2>PLC Card Fusing</h2>
+
+        <div style="color:#c62828;font-weight:bold;">
+          Could not load PLC card data.
+        </div>
+
+        <pre>${err.message}</pre>
+      </div>
+    `;
+  }
+}
+
+function renderPlcTool(cards, fuseHolders, fuses)
+{
+  let answers =
+  {
+    mfg: "",
+    series: "",
+    cardtype: "",
+    ac_dc: "",
+    cardpartnumber: ""
+  };
+
+  function render()
+  {
+    const filteredForSeries = cards.filter(function (card)
+    {
+      return !answers.mfg || card.mfg === answers.mfg;
+    });
+
+    const filteredForType = cards.filter(function (card)
+    {
+      return (
+        (!answers.mfg || card.mfg === answers.mfg) &&
+        (!answers.series || card.series === answers.series)
+      );
+    });
+
+    const filteredForAcDc = cards.filter(function (card)
+    {
+      return (
+        (!answers.mfg || card.mfg === answers.mfg) &&
+        (!answers.series || card.series === answers.series) &&
+        (!answers.cardtype || card.cardtype === answers.cardtype)
+      );
+    });
+
+    const filteredForCard = filterPlcCards(cards, answers);
+    const selected = getSelectedPlcCard(cards, answers);
+    const holderPartNumber = getHolderPartNumber(selected, answers.ac_dc);
+
+    document.getElementById("content").innerHTML = `
+      <div class="card">
+        <h2 style="margin-top:0;">
+          PLC Card Fusing Guide
+        </h2>
+
+        <p>
+          Select a PLC card and view the preferred fuse holder and fuse.
+        </p>
+
+        <div class="form-group">
+          <label for="plcSearch">Search Part Number</label>
+
+          <input
+            id="plcSearch"
+            class="tool-input"
+            type="text"
+            placeholder="Start typing a card part number..."
+            autocomplete="off"
+          >
+
+          <div id="plcSearchResults" class="search-results"></div>
+        </div>
+
+        ${renderPlcSelect("Manufacturer", "mfg", uniqueValues(cards, "mfg"), answers.mfg)}
+        ${renderPlcSelect("Series", "series", uniqueValues(filteredForSeries, "series"), answers.series)}
+        ${renderPlcSelect("Card Type", "cardtype", uniqueValues(filteredForType, "cardtype"), answers.cardtype)}
+        ${renderPlcSelect("AC / DC", "ac_dc", uniqueSplitValues(filteredForAcDc, "ac_dc"), answers.ac_dc)}
+        ${renderPlcSelect("Card Part Number", "cardpartnumber", uniqueValues(filteredForCard, "cardpartnumber"), answers.cardpartnumber)}
+
+        <div id="plcResultArea"></div>
+      </div>
+    `;
+
+    ["mfg", "series", "cardtype", "ac_dc", "cardpartnumber"].forEach(function (id)
+    {
+      document.getElementById(id).addEventListener("change", function (event)
+      {
+        answers[id] = event.target.value;
+
+        if (id === "mfg")
+        {
+          answers.series = "";
+          answers.cardtype = "";
+          answers.ac_dc = "";
+          answers.cardpartnumber = "";
+        }
+
+        if (id === "series")
+        {
+          answers.cardtype = "";
+          answers.ac_dc = "";
+          answers.cardpartnumber = "";
+        }
+
+        if (id === "cardtype")
+        {
+          answers.ac_dc = "";
+          answers.cardpartnumber = "";
+        }
+
+        if (id === "ac_dc")
+        {
+          answers.cardpartnumber = "";
+        }
+
+        render();
+      });
+    });
+
+    wirePlcSearch(cards, answers, render);
+
+    renderSelectedPlcResult(
+      selected,
+      holderPartNumber,
+      fuseHolders,
+      fuses,
+      answers
+    );
+  }
+
+  render();
+}
+
+function renderPlcSelect(label, id, options, value)
+{
+  return `
+    <div class="form-group">
+      <label>${label}</label>
+
+      <select id="${id}" class="tool-select">
+        <option value="">Select...</option>
+
+        ${options.map(function (option)
+        {
+          return `
+            <option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>
+              ${escapeHtml(option)}
+            </option>
+          `;
+        }).join("")}
+      </select>
+    </div>
+  `;
+}
+
+function filterPlcCards(cards, answers)
+{
+  return cards.filter(function (card)
+  {
+    if (answers.mfg && card.mfg !== answers.mfg)
+    {
+      return false;
+    }
+
+    if (answers.series && card.series !== answers.series)
+    {
+      return false;
+    }
+
+    if (answers.cardtype && card.cardtype !== answers.cardtype)
+    {
+      return false;
+    }
+
+    if (answers.ac_dc)
+    {
+      const cardTypes = String(card.ac_dc || "").split("|").map(function (value)
+      {
+        return value.trim();
+      });
+
+      if (!cardTypes.includes(answers.ac_dc))
+      {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+function getSelectedPlcCard(cards, answers)
+{
+  return cards.find(function (card)
+  {
+    const cardTypes = String(card.ac_dc || "").split("|").map(function (value)
+    {
+      return value.trim();
+    });
+
+    return (
+      card.mfg === answers.mfg &&
+      card.series === answers.series &&
+      card.cardtype === answers.cardtype &&
+      card.cardpartnumber === answers.cardpartnumber &&
+      cardTypes.includes(answers.ac_dc)
+    );
+  });
+}
+
+function getHolderPartNumber(card, acDc)
+{
+  if (!card)
+  {
+    return "";
+  }
+
+  if (acDc === "DC")
+  {
+    return card.recommendeddcholderpartnumber || "";
+  }
+
+  return card.recommendedacholderpartnumber || "";
+}
+
+function wirePlcSearch(cards, answers, render)
+{
+  const searchInput = document.getElementById("plcSearch");
+  const searchResults = document.getElementById("plcSearchResults");
+
+  const searchCards = [];
+
+  cards.forEach(function (card)
+  {
+    const acdcValues = String(card.ac_dc || "")
+      .split("|")
+      .map(function (value)
+      {
+        return value.trim();
+      })
+      .filter(Boolean);
+
+    acdcValues.forEach(function (acdc)
+    {
+      searchCards.push(
+      {
+        card: card,
+        acdc: acdc,
+        label: `${card.cardpartnumber} (${acdc})`
+      });
+    });
+  });
+
+  searchInput.addEventListener("input", function ()
+  {
+    const term = searchInput.value.trim().toUpperCase();
+
+    searchResults.innerHTML = "";
+
+    if (!term)
+    {
+      searchResults.style.display = "none";
+      return;
+    }
+
+    const matches = searchCards
+      .filter(function (item)
+      {
+        return String(item.card.cardpartnumber || "")
+          .toUpperCase()
+          .includes(term);
+      })
+      .slice(0, 20);
+
+    if (!matches.length)
+    {
+      searchResults.style.display = "none";
+      return;
+    }
+
+    matches.forEach(function (item)
+    {
+      const div = document.createElement("div");
+
+      div.className = "search-item";
+      div.textContent = item.label;
+
+      div.addEventListener("click", function ()
+      {
+        answers.mfg = item.card.mfg;
+        answers.series = item.card.series;
+        answers.cardtype = item.card.cardtype;
+        answers.ac_dc = item.acdc;
+        answers.cardpartnumber = item.card.cardpartnumber;
+
+        render();
+      });
+
+      searchResults.appendChild(div);
+    });
+
+    searchResults.style.display = "block";
+  });
+}
+
+function renderSelectedPlcResult(card, holderPartNumber, fuseHolders, fuses, answers)
+{
+  const resultArea = document.getElementById("plcResultArea");
+
+  if (!card)
+  {
+    resultArea.innerHTML = "";
+    return;
+  }
+
+  const holderSpecs = findByPartNumber(fuseHolders, holderPartNumber);
+  const fuseSpecs = findByPartNumber(fuses, card.recommendedfusepartnumber);
+
+  resultArea.innerHTML = `
+    <div
+      style="
+        margin-top:20px;
+        border-left:5px solid #0193cf;
+        padding:18px;
+        border-radius:14px;
+        background:#f8fbfd;
+      "
+    >
+      <h2 style="margin-top:0;color:#0193cf;">
+        ${escapeHtml(card.cardpartnumber || "")}
+      </h2>
+
+      <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+        Recommended Fuse Holder:
+      </div>
+
+      <div style="font-size:26px;font-weight:bold;color:#0193cf;margin-bottom:18px;">
+        ${escapeHtml(holderPartNumber || "No Match Found")}
+      </div>
+
+      <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+        Recommended Fuse:
+      </div>
+
+      <div style="font-size:26px;font-weight:bold;color:#0193cf;margin-bottom:18px;">
+        ${escapeHtml(card.recommendedfusepartnumber || "No Match Found")}
+      </div>
+
+      <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+        <strong>PLC Card Specs:</strong>
+        <div>Manufacturer: ${escapeHtml(card.mfg || "")}</div>
+        <div>Series: ${escapeHtml(card.series || "")}</div>
+        <div>Card Type: ${escapeHtml(card.cardtype || "")}</div>
+        <div>AC / DC: ${escapeHtml(answers.ac_dc || card.ac_dc || "")}</div>
+        <div>Description: ${escapeHtml(card.description || "")}</div>
+      </div>
+
+      <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+        <strong>Notes:</strong>
+        <div>${escapeHtml(card.notes || "No notes.")}</div>
+
+        ${
+          card.partlink
+            ? `
+              <div style="margin-top:10px;">
+                <strong>Part Link:</strong>
+                <a href="${escapeAttribute(card.partlink)}" target="_blank" rel="noopener noreferrer">
+                  Open Link
+                </a>
+              </div>
+            `
+            : ""
+        }
+      </div>
+
+      ${renderSpecs("Fuse Holder Specs:", holderSpecs, holderPartNumber)}
+      ${renderSpecs("Fuse Specs:", fuseSpecs, card.recommendedfusepartnumber)}
+    </div>
+  `;
+}
+
+function renderSpecs(title, specs, fallbackPartNumber)
+{
+  if (!fallbackPartNumber)
+  {
+    return "";
+  }
+
+  if (!specs)
+  {
+    return `
+      <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+        <strong>${title}</strong>
+        <div>Part Number: ${escapeHtml(fallbackPartNumber)}</div>
+        <div>No specs found.</div>
+      </div>
+    `;
+  }
+
+  const rows = Object.keys(specs)
+    .filter(function (key)
+    {
+      return String(specs[key] || "").trim() !== "";
+    })
+    .map(function (key)
+    {
+      const value = String(specs[key] || "").trim();
+
+      if (key === "partlink")
+      {
+        return `
+          <div>
+            <strong>${escapeHtml(niceLabel(key))}:</strong>
+            <a href="${escapeAttribute(value)}" target="_blank" rel="noopener noreferrer">
+              Open Link
+            </a>
+          </div>
+        `;
+      }
+
+      return `
+        <div>
+          <strong>${escapeHtml(niceLabel(key))}:</strong>
+          ${escapeHtml(value)}
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+      <strong>${title}</strong>
+      ${rows}
+    </div>
+  `;
+}
+
+function uniqueValues(rows, field)
+{
+  return [...new Set(
+    rows
+      .map(function (row)
+      {
+        return String(row[field] || "").trim();
+      })
+      .filter(Boolean)
+  )].sort();
+}
+
+function uniqueSplitValues(rows, field)
+{
+  return [...new Set(
+    rows
+      .flatMap(function (row)
+      {
+        return String(row[field] || "").split("|");
+      })
+      .map(function (value)
+      {
+        return value.trim();
+      })
+      .filter(Boolean)
+  )].sort();
+}
+
+function findByPartNumber(rows, partNumber)
+{
+  const target = normalizeValue(partNumber);
+
+  return rows.find(function (row)
+  {
+    return Object.keys(row).some(function (key)
+    {
+      const keyName = normalizeValue(key).replace(/\s+/g, "");
+      const value = normalizeValue(row[key]);
+
+      return (
+        value === target &&
+        (
+          keyName.includes("PART") ||
+          keyName.includes("CATALOG") ||
+          keyName.includes("CATALOGNUMBER") ||
+          keyName.includes("PARTNUMBER") ||
+          keyName.includes("CATNO")
+        )
+      );
+    });
+  });
+}
+
+function normalizeValue(value)
+{
+  return String(value || "").trim().toUpperCase();
+}
+
+function niceLabel(key)
+{
+  return String(key || "")
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, function (character)
+    {
+      return character.toUpperCase();
+    });
+}
+
+function escapeHtml(value)
+{
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeAttribute(value)
+{
+  return escapeHtml(value);
+}
+
+async function renderFuseGuidePlaceholder()
+{
+  document.getElementById("pageTitle").textContent = "Fuse Guide";
+
+  const content = document.getElementById("content");
+
+  content.innerHTML = `
+    <div class="card">
+      Loading fuse guide...
+    </div>
+  `;
+
+  try
+  {
+    const questionsResponse = await sb
+      .from("questions")
+      .select("*")
+      .order("questionorder");
+
+    const fuseResponse = await sb
+      .from("fusecatalog")
+      .select("*");
+
+    const holderResponse = await sb
+      .from("fuseholdercatalog")
+      .select("*");
+
+    const rulesResponse = await sb
+      .from("rules")
+      .select("*");
+
+    if (questionsResponse.error)
+    {
+      throw questionsResponse.error;
+    }
+
+    if (fuseResponse.error)
+    {
+      throw fuseResponse.error;
+    }
+
+    if (holderResponse.error)
+    {
+      throw holderResponse.error;
+    }
+
+    if (rulesResponse.error)
+    {
+      throw rulesResponse.error;
+    }
+
+    renderFuseGuideTool(
+      questionsResponse.data || [],
+      fuseResponse.data || [],
+      holderResponse.data || [],
+      rulesResponse.data || []
+    );
+  }
+  catch (err)
+  {
+    console.error("Fuse guide load error:", err);
+
+    content.innerHTML = `
+      <div class="card">
+        <h2>Fuse Guide</h2>
+
+        <div style="color:#c62828;font-weight:bold;">
+          Could not load fuse guide data.
+        </div>
+
+        <pre>${err.message}</pre>
+      </div>
+    `;
+  }
+}
+
+function renderFuseGuideTool(questions, fuses, holders, rules)
+{
+  let selectedApplication = "";
+  let answers = {};
+
+  function render()
+  {
+    document.getElementById("content").innerHTML = `
+      <div class="card">
+        <h2 style="margin-top:0;">
+          Fuse Selection Guide
+        </h2>
+
+        <p>
+          Select fuse holders and fuses for common panel design applications.
+        </p>
+
+        <div
+          style="
+            display:inline-block;
+            background:#ffd54f;
+            color:#4e3b00;
+            border:1px solid #e0b400;
+            border-radius:999px;
+            padding:6px 12px;
+            font-size:12px;
+            font-weight:bold;
+            letter-spacing:0.4px;
+            margin-bottom:18px;
+          "
+        >
+          GUIDE ONLY — to be verified by you and confirmed by a qualified engineer.
+        </div>
+
+        <div class="form-group">
+          <label>What do you need to fuse?</label>
+
+          <select id="fgApplicationSelect" class="tool-select">
+            <option value="">Select...</option>
+
+            ${fgGetAvailableApplications(questions).map(function (id)
+            {
+              return `
+                <option value="${fgEscapeHtml(id)}" ${selectedApplication === id ? "selected" : ""}>
+                  ${fgEscapeHtml(fgGetApplicationLabel(id))}
+                </option>
+              `;
+            }).join("")}
+          </select>
+        </div>
+
+        <div id="fgQuestionArea"></div>
+        <div id="fgResultArea"></div>
+      </div>
+    `;
+
+    document.getElementById("fgApplicationSelect").addEventListener("change", function (event)
+    {
+      selectedApplication = event.target.value;
+      answers = {};
+      render();
+    });
+
+    renderQuestions();
+  }
+
+  function renderQuestions()
+  {
+    const area = document.getElementById("fgQuestionArea");
+
+    if (!selectedApplication)
+    {
+      area.innerHTML = "";
+      return;
+    }
+
+    const allQuestions = fgGetQuestionsForApplication(questions, selectedApplication);
+    
+    allQuestions.forEach(function (question)
+    {
+      const questionId = question.questionid;
+    
+      if (
+        typeof answers[questionId] === "undefined" ||
+        answers[questionId] === null ||
+        answers[questionId] === ""
+      )
+      {
+        answers[questionId] = question.defaultvalue ?? "";
+      }
+    });
+    
+    const visibleQuestions = allQuestions.filter(function (question)
+    {
+      return fgQuestionIsVisible(question, answers);
+    });
+
+    area.innerHTML = `
+      ${visibleQuestions.map(function (question)
+      {
+        const questionId = question.questionid;
+        const options = fgSplitList(question.options);
+        const value = answers[questionId] ?? "";
+
+        if (question.type === "select")
+        {
+          return `
+            <div class="form-group">
+              <label>${fgEscapeHtml(question.label)}</label>
+
+              <select data-fg-question="${fgEscapeHtml(questionId)}" class="tool-select">
+                <option value="">Select...</option>
+
+                ${options.map(function (option)
+                {
+                  return `
+                    <option value="${fgEscapeHtml(option)}" ${String(value) === String(option) ? "selected" : ""}>
+                      ${fgEscapeHtml(option)}
+                    </option>
+                  `;
+                }).join("")}
+              </select>
+
+              ${question.helptext ? `<div class="status">${fgEscapeHtml(question.helptext)}</div>` : ""}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="form-group">
+            <label>
+              ${fgEscapeHtml(question.label)}
+              ${question.unit ? ` (${fgEscapeHtml(question.unit)})` : ""}
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              data-fg-question="${fgEscapeHtml(questionId)}"
+              value="${fgEscapeHtml(value)}"
+              class="tool-input"
+            >
+
+            ${question.helptext ? `<div class="status">${fgEscapeHtml(question.helptext)}</div>` : ""}
+          </div>
+        `;
+      }).join("")}
+
+      <button
+        id="fgCalculateButton"
+        class="login-button"
+        style="margin-top:8px;"
+      >
+        Calculate Guide Selection
+      </button>
+    `;
+
+    area.querySelectorAll("[data-fg-question]").forEach(function (input)
+    {
+      input.addEventListener("input", function (event)
+      {
+        answers[event.target.dataset.fgQuestion] = event.target.value;
+      });
+
+      input.addEventListener("change", function (event)
+      {
+        answers[event.target.dataset.fgQuestion] = event.target.value;
+        renderQuestions();
+      });
+    });
+
+    document.getElementById("fgCalculateButton").addEventListener("click", calculateAndRender);
+  }
+
+  function calculateAndRender()
+  {
+    const resultArea = document.getElementById("fgResultArea");
+
+    const matchedRules = rules.filter(function (rule)
+    {
+      if (rule.applicationid !== selectedApplication)
+      {
+        return false;
+      }
+
+      if (rule.matchquestionid && rule.matchvalue)
+      {
+        if (fgNormalize(answers[rule.matchquestionid]) !== fgNormalize(rule.matchvalue))
+        {
+          return false;
+        }
+      }
+
+      if (rule.matchquestionid2 && rule.matchvalue2)
+      {
+        if (fgNormalize(answers[rule.matchquestionid2]) !== fgNormalize(rule.matchvalue2))
+        {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    if (!matchedRules.length)
+    {
+      resultArea.innerHTML = `
+        <div class="card" style="border-left:5px solid #f59e0b;">
+          No rules found for this application.
+        </div>
+      `;
+
+      return;
+    }
+
+    const results = matchedRules.map(function (rule)
+    {
+      const baseCurrent = fgCalculateBaseCurrent(selectedApplication, rule, answers);
+      const multiplier = fgNumberValue(rule.multiplier) || 1;
+      const calculatedAmps = baseCurrent * multiplier;
+      const target = rule.target || "line";
+
+      const currentType = fgGetCurrentType(selectedApplication, answers, target);
+      const voltage = fgGetSystemVoltage(selectedApplication, answers, target);
+      const phases = fgGetPhases(selectedApplication, answers, target);
+
+      const system =
+      {
+        currentType: currentType,
+        voltage: voltage,
+        phases: phases,
+        requiredPoles: fgGetRequiredPoles(currentType, phases)
+      };
+
+      let fuse = null;
+
+      if (rule.fixedfusepartnumber)
+      {
+        fuse = fuses.find(function (candidate)
+        {
+          return fgNormalize(candidate.partnumber) === fgNormalize(rule.fixedfusepartnumber);
+        }) || null;
+      }
+      else
+      {
+        fuse = fgSelectFuse(fuses, calculatedAmps, system, rule);
+      }
+
+      let holder = null;
+
+      if (rule.fixedholderpartnumber)
+      {
+        holder = holders.find(function (candidate)
+        {
+          return fgNormalize(candidate.partnumber) === fgNormalize(rule.fixedholderpartnumber);
+        }) || null;
+      }
+      else if (fuse)
+      {
+        holder = fgSelectFuseHolder(holders, fuse, system);
+      }
+
+      return {
+        rule: rule,
+        baseCurrent: baseCurrent,
+        calculatedAmps: calculatedAmps,
+        system: system,
+        fuse: fuse,
+        holder: holder
+      };
+    });
+
+    resultArea.innerHTML = results.map(function (result)
+    {
+      return fgRenderFuseResult(selectedApplication, result, answers);
+    }).join("");
+  }
+
+  render();
+}
+
+function fgNumberValue(value)
+{
+  return Number(String(value || "").replace(/[^\d.-]/g, ""));
+}
+
+function fgSplitList(value)
+{
+  return String(value || "")
+    .split(/[|,]/)
+    .map(function (item)
+    {
+      return item.trim();
+    })
+    .filter(Boolean);
+}
+
+function fgNormalize(value)
+{
+  return String(value || "").trim().toUpperCase();
+}
+
+function fgGetApplicationLabel(applicationId)
+{
+  const labels =
+  {
+    panelFeed: "Panel Feed",
+    transformer: "Transformer",
+    powerSupply: "Power Supply",
+    io: "I/O Points",
+    motor: "Motor",
+    plcCard: "PLC Cards"
+  };
+
+  return labels[applicationId] || applicationId;
+}
+
+function fgGetAvailableApplications(questions)
+{
+  return [...new Set(
+    questions
+      .map(function (question)
+      {
+        return question.applicationid;
+      })
+      .filter(Boolean)
+  )];
+}
+
+function fgGetQuestionsForApplication(questions, applicationId)
+{
+  return questions
+    .filter(function (question)
+    {
+      return question.applicationid === applicationId;
+    })
+    .sort(function (a, b)
+    {
+      return fgNumberValue(a.questionorder) - fgNumberValue(b.questionorder);
+    });
+}
+
+function fgQuestionIsVisible(question, answers)
+{
+  if (!question.visiblewhen)
+  {
+    return true;
+  }
+
+  const parts = String(question.visiblewhen).split("=");
+  const questionId = parts[0];
+  const allowedValuesRaw = parts[1];
+
+  if (!questionId || !allowedValuesRaw)
+  {
+    return true;
+  }
+
+  const allowedValues = allowedValuesRaw
+    .split("|")
+    .map(function (value)
+    {
+      return fgNormalize(value);
+    });
+
+  return allowedValues.includes(fgNormalize(answers[questionId]));
+}
+
+function fgTransformerFla(kva, voltage, phases)
+{
+  const va = kva * 1000;
+
+  if (Number(phases) === 3)
+  {
+    return va / (voltage * Math.sqrt(3));
+  }
+
+  return va / voltage;
+}
+
+function fgPowerSupplyInputCurrent(watts, voltage, phases)
+{
+  if (Number(phases) === 3)
+  {
+    return watts / (voltage * Math.sqrt(3));
+  }
+
+  return watts / voltage;
+}
+
+function fgGetSystemVoltage(applicationId, answers, target)
+{
+  if (applicationId === "transformer")
+  {
+    return target === "secondary"
+      ? fgNumberValue(answers.secondaryVoltage)
+      : fgNumberValue(answers.primaryVoltage);
+  }
+
+  if (applicationId === "powerSupply")
+  {
+    return target === "output"
+      ? fgNumberValue(answers.outputVoltage)
+      : fgNumberValue(answers.inputVoltage);
+  }
+
+  if (applicationId === "motor")
+  {
+    return fgNumberValue(answers.motorVoltage);
+  }
+
+  return fgNumberValue(answers.voltage);
+}
+
+function fgGetCurrentType(applicationId, answers, target)
+{
+  if (applicationId === "powerSupply" && target === "output")
+  {
+    return "DC";
+  }
+
+  if (applicationId === "io")
+  {
+    return String(answers.voltage || "").toUpperCase().includes("DC") ? "DC" : "AC";
+  }
+
+  return answers.currentType || "AC";
+}
+
+function fgGetPhases(applicationId, answers, target)
+{
+  if (applicationId === "transformer")
+  {
+    return target === "secondary"
+      ? fgNumberValue(answers.secondaryPhases)
+      : fgNumberValue(answers.primaryPhases);
+  }
+
+  if (applicationId === "powerSupply")
+  {
+    return fgNumberValue(answers.inputPhases);
+  }
+
+  if (applicationId === "motor")
+  {
+    return fgNumberValue(answers.motorPhases);
+  }
+
+  return fgNumberValue(answers.phases);
+}
+
+function fgGetRequiredPoles(currentType, phases)
+{
+  if (currentType === "DC")
+  {
+    return 1;
+  }
+
+  if (Number(phases) === 3)
+  {
+    return 3;
+  }
+
+  if (Number(phases) === 2)
+  {
+    return 2;
+  }
+
+  return 1;
+}
+
+function fgCalculateBaseCurrent(applicationId, rule, answers)
+{
+  const formulaType = rule.formulatype;
+
+  if (formulaType === "totalCurrentWithSpare")
+  {
+    const total = fgNumberValue(answers.totalCurrent);
+    const spare = fgNumberValue(answers.spareCapacity);
+
+    return total * (1 + spare / 100);
+  }
+
+  if (formulaType === "powerSupplyInputCurrent")
+  {
+    return fgPowerSupplyInputCurrent(
+      fgNumberValue(answers.powerWatts),
+      fgNumberValue(answers.inputVoltage),
+      fgNumberValue(answers.inputPhases)
+    );
+  }
+
+  if (formulaType === "outputCurrent")
+  {
+    return fgNumberValue(answers.outputCurrent);
+  }
+
+  if (formulaType === "motorFLA")
+  {
+    const source = fgNormalize(answers.motorCurrentSource);
+    const voltage = fgNumberValue(answers.motorVoltage);
+    const phases = fgNumberValue(answers.motorPhases);
+    const efficiency = fgNumberValue(answers.motorEfficiency) / 100 || 0.9;
+
+    if (source === "NAMEPLATE FLA" || source === "FLA" || source === "MOTOR FLA")
+    {
+      return fgNumberValue(answers.fla || answers.motorFLA || answers.nameplateFLA);
+    }
+
+    if (source === "HP")
+    {
+      const hp = fgNumberValue(answers.motorHP);
+      const watts = hp * 746;
+
+      if (phases === 3)
+      {
+        return watts / (voltage * Math.sqrt(3) * efficiency);
+      }
+
+      return watts / (voltage * efficiency);
+    }
+
+    if (source === "KW")
+    {
+      const kw = fgNumberValue(answers.motorKW);
+      const watts = kw * 1000;
+
+      if (phases === 3)
+      {
+        return watts / (voltage * Math.sqrt(3) * efficiency);
+      }
+
+      return watts / (voltage * efficiency);
+    }
+
+    return 0;
+  }
+
+  if (formulaType === "transformerPrimaryFLA")
+  {
+    return fgTransformerFla(
+      fgNumberValue(answers.kva),
+      fgNumberValue(answers.primaryVoltage),
+      fgNumberValue(answers.primaryPhases)
+    );
+  }
+
+  if (formulaType === "transformerSecondaryFLA")
+  {
+    return fgTransformerFla(
+      fgNumberValue(answers.kva),
+      fgNumberValue(answers.secondaryVoltage),
+      fgNumberValue(answers.secondaryPhases)
+    );
+  }
+
+  if (formulaType === "ioEstimatedCurrent")
+  {
+    return fgNumberValue(answers.current || 1);
+  }
+
+  return 0;
+}
+
+function fgFuseSupportsSystem(fuse, system)
+{
+  if (system.currentType === "AC")
+  {
+    return fgNumberValue(fuse.acvoltagemax) >= system.voltage;
+  }
+
+  if (system.currentType === "DC")
+  {
+    return fgNumberValue(fuse.dcvoltagemax) >= system.voltage;
+  }
+
+  return false;
+}
+
+function fgSelectFuse(fuses, calculatedAmps, system, rule)
+{
+  const baseCandidates = fuses.filter(function (fuse)
+  {
+    return (
+      fgFuseSupportsSystem(fuse, system) &&
+      fgNumberValue(fuse.amps) >= calculatedAmps
+    );
+  });
+
+  const classSequence = fgSplitList(rule.fuseclass);
+
+  for (const fuseClass of classSequence)
+  {
+    const classMatches = baseCandidates.filter(function (fuse)
+    {
+      return fgNormalize(fuse.fuseclass) === fgNormalize(fuseClass);
+    });
+
+    if (classMatches.length)
+    {
+      return classMatches.sort(function (a, b)
+      {
+        return fgNumberValue(a.amps) - fgNumberValue(b.amps);
+      })[0];
+    }
+  }
+
+  return baseCandidates.sort(function (a, b)
+  {
+    return fgNumberValue(a.amps) - fgNumberValue(b.amps);
+  })[0] || null;
+}
+
+function fgHolderSupportsFuse(holder, fuse)
+{
+  const holderClasses = fgSplitList(holder.fuseclasses || holder.fuseclass).map(fgNormalize);
+
+  return holderClasses.includes(fgNormalize(fuse.fuseclass));
+}
+
+function fgSelectFuseHolder(holders, fuse, system)
+{
+  return holders
+    .filter(function (holder)
+    {
+      return fgHolderSupportsFuse(holder, fuse);
+    })
+    .filter(function (holder)
+    {
+      return fgNumberValue(holder.maxamps) >= fgNumberValue(fuse.amps);
+    })
+    .filter(function (holder)
+    {
+      if (system.currentType === "AC")
+      {
+        return fgNumberValue(holder.acvoltagemax) >= system.voltage;
+      }
+
+      if (system.currentType === "DC")
+      {
+        return fgNumberValue(holder.dcvoltagemax) >= system.voltage;
+      }
+
+      return false;
+    })
+    .filter(function (holder)
+    {
+      return fgNumberValue(holder.poles) >= system.requiredPoles;
+    })
+    .sort(function (a, b)
+    {
+      return (
+        fgNumberValue(a.poles) - fgNumberValue(b.poles) ||
+        fgNumberValue(a.maxamps) - fgNumberValue(b.maxamps)
+      );
+    })[0] || null;
+}
+
+function fgGetFormulaReference(applicationId, rule, answers)
+{
+  if (rule.formulatype === "motorFLA")
+  {
+    const source = fgNormalize(answers.motorCurrentSource);
+
+    if (source === "HP")
+    {
+      const hp = fgNumberValue(answers.motorHP);
+      const voltage = fgNumberValue(answers.motorVoltage);
+      const phases = fgNumberValue(answers.motorPhases);
+      const efficiency = fgNumberValue(answers.motorEfficiency) / 100 || 0.9;
+
+      if (phases === 3)
+      {
+        return `Calculated Current FLA = (${hp} HP × 746) ÷ (${voltage}V × √3 × ${efficiency})`;
+      }
+
+      return `Calculated Current FLA = (${hp} HP × 746) ÷ (${voltage}V × ${efficiency})`;
+    }
+
+    if (source === "KW")
+    {
+      return "Calculated Current FLA = (kW × 1000) ÷ (Voltage × √3 × Efficiency)";
+    }
+
+    if (source === "NAMEPLATE FLA" || source === "FLA" || source === "MOTOR FLA")
+    {
+      return "Calculated FLA entered from motor nameplate.";
+    }
+  }
+
+  if (rule.formulatype === "transformerPrimaryFLA" || rule.formulatype === "transformerSecondaryFLA")
+  {
+    const phases = rule.formulatype === "transformerSecondaryFLA"
+      ? fgNumberValue(answers.secondaryPhases)
+      : fgNumberValue(answers.primaryPhases);
+
+    if (phases === 3)
+    {
+      return "Calculated Current FLA = (kVA × 1000) ÷ (Voltage × √3)";
+    }
+
+    return "Calculated Current FLA = (kVA × 1000) ÷ Voltage";
+  }
+
+  if (rule.formulatype === "powerSupplyInputCurrent")
+  {
+    const phases = fgNumberValue(answers.inputPhases);
+
+    if (phases === 3)
+    {
+      return "Input Current FLA = Watts ÷ (Voltage × √3)";
+    }
+
+    return "Input Current FLA = Watts ÷ Voltage";
+  }
+
+  if (rule.formulatype === "outputCurrent")
+  {
+    return "Output current entered by user.";
+  }
+
+  if (rule.formulatype === "totalCurrentWithSpare")
+  {
+    return "Calculated Current = Total Current × (1 + Spare Capacity ÷ 100).";
+  }
+
+  return "Calculated from selected rule.";
+}
+
+function fgPartLinkHtml(url, label)
+{
+  const link = String(url || "").trim();
+
+  if (!link)
+  {
+    return "";
+  }
+
+  return `
+    <div>
+      <strong>Part Link:</strong>
+      <a href="${fgEscapeAttribute(link)}" target="_blank" rel="noopener noreferrer">
+        ${fgEscapeHtml(label)}
+      </a>
+    </div>
+  `;
+}
+
+function fgRenderFuseResult(applicationId, result, answers)
+{
+  return `
+    <div style="height:18px;"></div>
+
+    <div
+      style="
+        display:inline-block;
+        background:#ffd54f;
+        color:#4e3b00;
+        border:1px solid #e0b400;
+        border-radius:999px;
+        padding:6px 12px;
+        font-size:12px;
+        font-weight:bold;
+        letter-spacing:0.4px;
+      "
+    >
+      USE AT YOUR OWN RISK: JNE IS NOT RESPONSIBLE FOR LOSS OR DAMAGES RESULTING FROM YOUR USE OF THIS TOOL!
+    </div>
+
+    <div class="card" style="border-left:5px solid #0193cf;margin-top:18px;">
+      <h2 style="margin-top:0;">
+        ${fgEscapeHtml(result.rule.rulename || result.rule.ruleid)}
+      </h2>
+
+      <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+        Recommended Fuse Holder:
+      </div>
+
+      <div style="font-size:28px;font-weight:700;color:#005bbb;line-height:1.15;margin-top:2px;margin-bottom:18px;">
+        ${fgEscapeHtml(result.holder?.partnumber || "No Match Found")}
+      </div>
+
+      <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+        Recommended Fuse:
+      </div>
+
+      <div style="font-size:28px;font-weight:700;color:#005bbb;line-height:1.15;margin-top:2px;margin-bottom:18px;">
+        ${fgEscapeHtml(result.fuse?.partnumber || "No Match Found")}
+      </div>
+
+      <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+        <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+          Calculations:
+        </div>
+
+        <div class="status">
+          <div><strong>Calculated Current Formula:</strong> ${fgEscapeHtml(fgGetFormulaReference(applicationId, result.rule, answers))}</div>
+          <div><strong>Fuse Selection Formula:</strong> Fuse Selection Current = Calculated Current × Rule Multiplier</div>
+          <div><strong>Calculated Current:</strong> ${result.baseCurrent.toFixed(3)} A</div>
+          <div><strong>Rule Multiplier:</strong> ${fgNumberValue(result.rule.multiplier) || 1}</div>
+          <div><strong>Fuse Selection Current:</strong> ${result.calculatedAmps.toFixed(3)} A</div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+        <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+          Fuse Holder Specs:
+        </div>
+
+        ${
+          result.holder
+            ? `
+              <div class="status">
+                <div><strong>Description:</strong> ${fgEscapeHtml(result.holder.description || "")}</div>
+                <div><strong>Fuse Classes:</strong> ${fgEscapeHtml(result.holder.fuseclasses || result.holder.fuseclass || "")}</div>
+                <div><strong>Poles:</strong> ${fgEscapeHtml(result.holder.poles || "")}</div>
+                <div><strong>Max Amps:</strong> ${fgEscapeHtml(result.holder.maxamps || "")} A</div>
+                <div><strong>AC Voltage:</strong> ${fgEscapeHtml(result.holder.acvoltagemax || "")} V</div>
+                <div><strong>DC Voltage:</strong> ${fgEscapeHtml(result.holder.dcvoltagemax || "")} V</div>
+                <div><strong>Terminal Type:</strong> ${fgEscapeHtml(result.holder.terminaltype || "")}</div>
+                ${fgPartLinkHtml(result.holder.partlink, "Open Fuse Holder Link")}
+              </div>
+            `
+            : `
+              <div style="color:#c62828;font-weight:bold;">
+                No matching fuse holder found.
+              </div>
+            `
+        }
+      </div>
+
+      <div style="border-top:1px solid #ddd;padding-top:14px;margin-top:16px;">
+        <div style="font-size:15px;font-weight:bold;margin-bottom:8px;">
+          Fuse Specs:
+        </div>
+
+        ${
+          result.fuse
+            ? `
+              <div class="status">
+                <div><strong>Fuse Class:</strong> ${fgEscapeHtml(result.fuse.fuseclass || "")}</div>
+                <div><strong>Current Rating:</strong> ${fgEscapeHtml(result.fuse.amps || "")} A</div>
+                <div><strong>Blow Speed:</strong> ${fgEscapeHtml(result.fuse.blowspeed || "")}</div>
+                <div><strong>AC Voltage:</strong> ${fgEscapeHtml(result.fuse.acvoltagemax || "")} V</div>
+                <div><strong>DC Voltage:</strong> ${fgEscapeHtml(result.fuse.dcvoltagemax || "")} V</div>
+                <div><strong>Fuse Selection Current:</strong> ${result.calculatedAmps.toFixed(2)} A</div>
+                ${fgPartLinkHtml(result.fuse.partlink, "Open Fuse Link")}
+              </div>
+            `
+            : `
+              <div style="color:#c62828;font-weight:bold;">
+                No matching fuse found.
+              </div>
+            `
+        }
+      </div>
+    </div>
+  `;
+}
+
+function fgEscapeHtml(value)
+{
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function fgEscapeAttribute(value)
+{
+  return fgEscapeHtml(value);
+}
+
+function wireKnowledgeFilesTool()
+{
+  const sheetId = "1nT-0iHAVjBNFUCQG4aTgULJvSs-DsF69HAUX0faNRz4";
+  const sheetName = "KF Files";
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+
+  let allFiles = [];
+
+  const els =
+  {
+    search: document.getElementById("kfSearchInput"),
+    clear: document.getElementById("kfClearBtn"),
+    category: document.getElementById("kfCategoryFilter"),
+    topic: document.getElementById("kfTopicFilter"),
+    docType: document.getElementById("kfDocTypeFilter"),
+    author: document.getElementById("kfAuthorFilter"),
+    sort: document.getElementById("kfSortSelect"),
+    results: document.getElementById("kfResults"),
+    count: document.getElementById("kfResultCount"),
+    lastUpdated: document.getElementById("kfLastUpdated")
+  };
+
+  function normalizeHeader(header)
+  {
+    return String(header || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toLowerCase();
+  }
+
+  function cellValue(cell)
+  {
+    if (!cell)
+    {
+      return "";
+    }
+
+    return String(cell.f || cell.v || "").trim();
+  }
+
+  function parseGoogleSheetJson(rawText)
+  {
+    const json = JSON.parse(rawText.substring(rawText.indexOf("{"), rawText.lastIndexOf("}") + 1));
+
+    let cols = json.table.cols.map(function (col)
+    {
+      return normalizeHeader(col.label);
+    });
+
+    let rows = json.table.rows;
+
+    const hasExpectedHeaders =
+      cols.includes("link") ||
+      cols.includes("fileid") ||
+      cols.includes("title");
+
+    if (!hasExpectedHeaders && rows.length)
+    {
+      cols = rows[0].c.map(function (cell)
+      {
+        return normalizeHeader(cellValue(cell));
+      });
+
+      rows = rows.slice(1);
+    }
+
+    return rows.map(function (row)
+    {
+      const item = {};
+
+      row.c.forEach(function (cell, index)
+      {
+        item[cols[index]] = cellValue(cell);
+      });
+
+      const rawLink = item.link || "";
+      const safeLink = /^https?:\/\//i.test(rawLink)
+        ? rawLink
+        : buildGoogleFileLink(item.fileid);
+
+      return {
+        link: safeLink,
+        folder: item.folder || "",
+        fileName: item.filename || "",
+        docType: item.doctype || "",
+        category: item.category || "",
+        topic: item.topic || "",
+        title: item.title || item.filename || "Untitled",
+        author: item.author || "",
+        releaseDate: item.releasedate || "",
+        fileId: item.fileid || "",
+        emailed: item.emailed || ""
+      };
+    }).filter(function (item)
+    {
+      return item.title && item.title.toLowerCase() !== "title";
+    });
+  }
+
+  function buildGoogleFileLink(fileId)
+  {
+    if (!fileId)
+    {
+      return "#";
+    }
+
+    return `https://drive.google.com/open?id=${encodeURIComponent(fileId)}`;
+  }
+
+  function hiddenValue(value)
+  {
+    return String(value || "").trim().startsWith("#");
+  }
+
+  function uniqueSorted(values)
+  {
+    return [...new Set(
+      values.filter(function (value)
+      {
+        if (!value)
+        {
+          return false;
+        }
+
+        return !String(value).trim().startsWith("#");
+      })
+    )].sort(function (a, b)
+    {
+      return a.localeCompare(b);
+    });
+  }
+
+  function fillSelect(select, values, defaultText)
+  {
+    const currentValue = select.value;
+    const options = uniqueSorted(values);
+
+    select.innerHTML = `<option value="">${escapeHtml(defaultText)}</option>`;
+
+    options.forEach(function (value)
+    {
+      const option = document.createElement("option");
+
+      option.value = value;
+      option.textContent = value;
+
+      select.appendChild(option);
+    });
+
+    select.value = options.includes(currentValue) ? currentValue : "";
+  }
+
+  function visibleFiles()
+  {
+    return allFiles.filter(function (file)
+    {
+      return (
+        !hiddenValue(file.category) &&
+        !hiddenValue(file.topic) &&
+        !hiddenValue(file.docType) &&
+        !hiddenValue(file.author)
+      );
+    });
+  }
+
+  function populateFilters(files)
+  {
+    const visible = files.filter(function (file)
+    {
+      return (
+        !hiddenValue(file.category) &&
+        !hiddenValue(file.topic) &&
+        !hiddenValue(file.docType) &&
+        !hiddenValue(file.author)
+      );
+    });
+
+    const categoryScoped = visible.filter(function (file)
+    {
+      return !els.category.value || file.category === els.category.value;
+    });
+
+    const topicScoped = categoryScoped.filter(function (file)
+    {
+      return !els.topic.value || file.topic === els.topic.value;
+    });
+
+    const docTypeScoped = topicScoped.filter(function (file)
+    {
+      return !els.docType.value || file.docType === els.docType.value;
+    });
+
+    fillSelect(els.category, visible.map(function (file)
+    {
+      return file.category;
+    }), "All categories");
+
+    fillSelect(els.topic, categoryScoped.map(function (file)
+    {
+      return file.topic;
+    }), "All topics");
+
+    fillSelect(els.docType, topicScoped.map(function (file)
+    {
+      return file.docType;
+    }), "All doc types");
+
+    fillSelect(els.author, docTypeScoped.map(function (file)
+    {
+      return file.author;
+    }), "All authors");
+  }
+
+  function matchesSearch(file, query)
+  {
+    if (!query)
+    {
+      return true;
+    }
+
+    const haystack =
+    [
+      file.title,
+      file.topic,
+      file.category,
+      file.docType,
+      file.folder,
+      file.fileName,
+      file.author
+    ].join(" ").toLowerCase();
+
+    return query.toLowerCase().split(/\s+/).every(function (term)
+    {
+      return haystack.includes(term);
+    });
+  }
+
+  function getFilteredFiles()
+  {
+    const query = els.search.value.trim();
+
+    populateFilters(allFiles);
+
+    const files = visibleFiles().filter(function (file)
+    {
+      return (
+        matchesSearch(file, query) &&
+        (!els.category.value || file.category === els.category.value) &&
+        (!els.topic.value || file.topic === els.topic.value) &&
+        (!els.docType.value || file.docType === els.docType.value) &&
+        (!els.author.value || file.author === els.author.value)
+      );
+    });
+
+    const sortMode = els.sort.value;
+
+    files.sort(function (a, b)
+    {
+      if (sortMode === "newest")
+      {
+        return new Date(b.releaseDate || 0) - new Date(a.releaseDate || 0);
+      }
+
+      if (sortMode === "categoryAsc")
+      {
+        return `${a.category} ${a.title}`.localeCompare(`${b.category} ${b.title}`);
+      }
+
+      if (sortMode === "authorAsc")
+      {
+        return `${a.author} ${a.title}`.localeCompare(`${b.author} ${b.title}`);
+      }
+
+      return a.title.localeCompare(b.title);
+    });
+
+    return files;
+  }
+
+  function renderResults()
+  {
+    const files = getFilteredFiles();
+
+    els.count.textContent = `${files.length} result${files.length === 1 ? "" : "s"} found`;
+
+    if (!files.length)
+    {
+      els.results.className = "";
+      els.results.innerHTML = `
+        <div class="kf-empty">
+          No knowledge files match your search.
+        </div>
+      `;
+
+      return;
+    }
+
+    els.results.className = "kf-result-grid";
+
+    els.results.innerHTML = files.map(function (file)
+    {
+      const type = String(file.docType).toLowerCase();
+
+      const service =
+        type.includes("slide") || type.includes("presentation")
+          ? "presentation"
+          : "document";
+
+      const baseUrl = `https://docs.google.com/${service}/d/${file.fileId}`;
+      const previewLink = `${baseUrl}/preview`;
+      const editLink = `${baseUrl}/edit`;
+
+      return `
+        <article class="kf-result-card">
+          <h2 class="kf-result-title">
+            <a
+              href="${escapeAttribute(previewLink)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Preview Link"
+            >
+              ${escapeHtml(file.title)}
+            </a>
+          </h2>
+
+          <div class="kf-card-actions">
+            <a
+              href="${escapeAttribute(file.link)}"
+              target="_blank"
+              class="kf-btn-sm"
+              title="Open Safe Link"
+            >
+              Open
+            </a>
+
+            <a
+              href="${escapeAttribute(editLink)}"
+              target="_blank"
+              class="kf-btn-sm"
+              title="Open in Edit Mode"
+            >
+              Edit
+            </a>
+          </div>
+
+          <div class="kf-result-file">
+            ${escapeHtml(file.fileName)}
+          </div>
+
+          <div class="kf-chip-row">
+            ${file.docType ? `<span class="kf-chip">${escapeHtml(file.docType)}</span>` : ""}
+            ${file.category ? `<span class="kf-chip">${escapeHtml(file.category)}</span>` : ""}
+            ${file.topic ? `<span class="kf-chip">${escapeHtml(file.topic)}</span>` : ""}
+          </div>
+
+          <div class="kf-details">
+            ${file.folder ? `<span><strong>Folder:</strong> ${escapeHtml(file.folder)}</span>` : ""}
+            ${file.author ? `<span><strong>Author:</strong> ${escapeHtml(file.author)}</span>` : ""}
+            ${file.releaseDate ? `<span><strong>Release:</strong> ${escapeHtml(file.releaseDate)}</span>` : ""}
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  async function loadFiles()
+  {
+    try
+    {
+      const response = await fetch(sheetUrl);
+
+      if (!response.ok)
+      {
+        throw new Error(`Sheet request failed: ${response.status}`);
+      }
+
+      const rawText = await response.text();
+
+      allFiles = parseGoogleSheetJson(rawText);
+
+      populateFilters(allFiles);
+      renderResults();
+
+      els.lastUpdated.textContent = `Loaded ${new Date().toLocaleString()}`;
+    }
+    catch (error)
+    {
+      console.error(error);
+
+      els.count.textContent = "Unable to load files";
+      els.results.className = "";
+      els.results.innerHTML = `
+        <div class="kf-error">
+          Could not load the Google Sheet. Confirm the sheet is shared with viewers and that the tab name is exactly "KF Files".
+        </div>
+      `;
+    }
+  }
+
+  [els.search, els.category, els.topic, els.docType, els.author, els.sort].forEach(function (el)
+  {
+    el.addEventListener("input", renderResults);
+    el.addEventListener("change", renderResults);
+  });
+
+  els.clear.addEventListener("click", function ()
+  {
+    els.search.value = "";
+    els.category.value = "";
+    els.topic.value = "";
+    els.docType.value = "";
+    els.author.value = "";
+    els.sort.value = "titleAsc";
+
+    renderResults();
+    els.search.focus();
+  });
+
+  loadFiles();
+}
+      
+function renderKnowledgePlaceholder()
+{
+  document.getElementById("pageTitle").textContent = "Knowledge Files";
+
+  const content = document.getElementById("content");
+
+  content.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">
+        Knowledge Files
+      </h2>
+
+      <p>
+        Search how-to documents by title, topic, category, file type, folder, or author.
+      </p>
+
+      <div class="kf-controls">
+        <div class="kf-search-row">
+          <input
+            id="kfSearchInput"
+            class="tool-input"
+            type="search"
+            placeholder="Search knowledge files... e.g. AutoCAD, PlantPAx, loop drawings"
+          >
+
+          <button
+            id="kfClearBtn"
+            class="login-button"
+            type="button"
+          >
+            Clear
+          </button>
+        </div>
+
+        <div class="kf-filter-row">
+          <select id="kfCategoryFilter" class="tool-select">
+            <option value="">All categories</option>
+          </select>
+
+          <select id="kfTopicFilter" class="tool-select">
+            <option value="">All topics</option>
+          </select>
+
+          <select id="kfDocTypeFilter" class="tool-select">
+            <option value="">All doc types</option>
+          </select>
+
+          <select id="kfAuthorFilter" class="tool-select">
+            <option value="">All authors</option>
+          </select>
+
+          <select id="kfSortSelect" class="tool-select">
+            <option value="titleAsc">Sort: Title A-Z</option>
+            <option value="categoryAsc">Sort: Category A-Z</option>
+            <option value="newest">Sort: Newest release</option>
+            <option value="authorAsc">Sort: Author A-Z</option>
+          </select>
+        </div>
+
+        <div class="kf-meta-row">
+          <span id="kfResultCount">Loading files...</span>
+          <span id="kfLastUpdated"></span>
+        </div>
+      </div>
+
+      <section id="kfResults" class="kf-result-grid" aria-live="polite">
+        <div class="kf-loading">Loading knowledge files...</div>
+      </section>
+    </div>
+  `;
+
+  wireKnowledgeFilesTool();
+}
+
+      function renderAnalogScaleTool()
+{
+  document.getElementById("pageTitle").textContent = "Analog Scaling";
+
+  const content = document.getElementById("content");
+
+  content.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">
+        Analog Scaling Tool
+      </h2>
+
+      <p>
+        Convert raw analog values to engineering units, reverse-calculate raw input, and check fail limits.
+      </p>
+
+      <div
+        style="
+          display:grid;
+          grid-template-columns:repeat(2, minmax(0, 1fr));
+          gap:18px;
+        "
+      >
+        <div class="card" style="box-shadow:none;border:1px solid #ddd;">
+          <h3 style="margin-top:0;">
+            Scale Setup
+          </h3>
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:repeat(2, minmax(0, 1fr));
+              gap:12px;
+            "
+          >
+            <div class="form-group">
+              <label for="asMinRaw">Min Raw</label>
+              <input id="asMinRaw" class="tool-input" type="number" step="any">
+            </div>
+
+            <div class="form-group">
+              <label for="asMaxRaw">Max Raw</label>
+              <input id="asMaxRaw" class="tool-input" type="number" step="any">
+            </div>
+          </div>
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:repeat(2, minmax(0, 1fr));
+              gap:12px;
+            "
+          >
+            <div class="form-group">
+              <label for="asMinEU">Min EU</label>
+              <input id="asMinEU" class="tool-input" type="number" step="any">
+            </div>
+
+            <div class="form-group">
+              <label for="asMaxEU">Max EU</label>
+              <input id="asMaxEU" class="tool-input" type="number" step="any">
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none;border:1px solid #ddd;">
+          <h3 style="margin-top:0;">
+            Live Calculation
+          </h3>
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:repeat(5, 1fr);
+              gap:8px;
+              margin-bottom:14px;
+            "
+          >
+            <button class="as-percent-button" type="button" data-percent="0">0%</button>
+            <button class="as-percent-button" type="button" data-percent="0.25">25%</button>
+            <button class="as-percent-button" type="button" data-percent="0.5">50%</button>
+            <button class="as-percent-button" type="button" data-percent="0.75">75%</button>
+            <button class="as-percent-button" type="button" data-percent="1">100%</button>
+          </div>
+
+          <div class="form-group">
+            <label for="asValIn">Raw Input</label>
+            <input id="asValIn" class="tool-input" type="number" step="any">
+          </div>
+
+          <div class="form-group">
+            <label for="asValOut">EU Value Out</label>
+            <input id="asValOut" class="tool-input" type="number" step="any">
+          </div>
+
+          <div class="form-group">
+            <label for="asmAIn">4–20 mA Input</label>
+            <input id="asmAIn" class="tool-input" type="text" readonly>
+          </div>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div id="asFailLo" class="as-status-pill">
+              Fail Lo
+            </div>
+
+            <div id="asFailHi" class="as-status-pill">
+              Fail Hi
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none;border:1px solid #ddd;">
+          <h3 style="margin-top:0;">
+            Fail Limits
+          </h3>
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:repeat(2, minmax(0, 1fr));
+              gap:12px;
+            "
+          >
+            <div class="form-group">
+              <label for="asMinFail">Min EU Fail</label>
+              <input id="asMinFail" class="tool-input" type="text" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="asMaxFail">Max EU Fail</label>
+              <input id="asMaxFail" class="tool-input" type="text" readonly>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="status">
+        Fail limits use the original VB.NET logic: raw span × 0.003125 is subtracted from Min Raw and added to Max Raw, then converted to engineering units.
+      </p>
+    </div>
+  `;
+
+  wireAnalogScaleTool();
+}
+
+function wireAnalogScaleTool()
+{
+  const storageKey = "jneAnalogScaleSettings";
+
+  const fields =
+  {
+    minRaw: document.getElementById("asMinRaw"),
+    maxRaw: document.getElementById("asMaxRaw"),
+    minEU: document.getElementById("asMinEU"),
+    maxEU: document.getElementById("asMaxEU"),
+    valIn: document.getElementById("asValIn"),
+    valOut: document.getElementById("asValOut"),
+    mAIn: document.getElementById("asmAIn"),
+    minFail: document.getElementById("asMinFail"),
+    maxFail: document.getElementById("asMaxFail"),
+    failLo: document.getElementById("asFailLo"),
+    failHi: document.getElementById("asFailHi")
+  };
+
+  const defaults =
+  {
+    minRaw: 4000,
+    maxRaw: 20000,
+    minEU: 0,
+    maxEU: 100,
+    valIn: 4000
+  };
+
+  function toNumber(input)
+  {
+    const value = parseFloat(input.value);
+
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function round3(value)
+  {
+    return Math.round(value * 1000) / 1000;
+  }
+
+  function calculateValue(rawVal)
+  {
+    const minRaw = toNumber(fields.minRaw);
+    const maxRaw = toNumber(fields.maxRaw);
+    const minEU = toNumber(fields.minEU);
+    const maxEU = toNumber(fields.maxEU);
+
+    if ([minRaw, maxRaw, minEU, maxEU].some(function (value)
+    {
+      return value === null;
+    }))
+    {
+      return null;
+    }
+
+    if (maxRaw === minRaw)
+    {
+      return null;
+    }
+
+    return round3((((rawVal - minRaw) / (maxRaw - minRaw)) * (maxEU - minEU)) + minEU);
+  }
+
+  function calculateRawFromEU(euVal)
+  {
+    const minRaw = toNumber(fields.minRaw);
+    const maxRaw = toNumber(fields.maxRaw);
+    const minEU = toNumber(fields.minEU);
+    const maxEU = toNumber(fields.maxEU);
+
+    if ([minRaw, maxRaw, minEU, maxEU].some(function (value)
+    {
+      return value === null;
+    }))
+    {
+      return null;
+    }
+
+    if (maxEU === minEU)
+    {
+      return null;
+    }
+
+    return round3(((euVal - minEU) / (maxEU - minEU)) * (maxRaw - minRaw) + minRaw);
+  }
+
+  function calculateMAFromEU(euVal)
+  {
+    const minEU = toNumber(fields.minEU);
+    const maxEU = toNumber(fields.maxEU);
+
+    if ([minEU, maxEU].some(function (value)
+    {
+      return value === null;
+    }))
+    {
+      return null;
+    }
+
+    if (maxEU === minEU)
+    {
+      return null;
+    }
+
+    return round3(((euVal - minEU) / (maxEU - minEU)) * 16 + 4);
+  }
+
+  function calculateLimits()
+  {
+    const minRaw = toNumber(fields.minRaw);
+    const maxRaw = toNumber(fields.maxRaw);
+
+    if (minRaw === null || maxRaw === null)
+    {
+      return;
+    }
+
+    const span = (maxRaw - minRaw) * 0.003125;
+    const minPoint = minRaw - span;
+    const maxPoint = maxRaw + span;
+
+    const minFail = calculateValue(minPoint);
+    const maxFail = calculateValue(maxPoint);
+
+    fields.minFail.value = minFail === null ? "" : minFail;
+    fields.maxFail.value = maxFail === null ? "" : maxFail;
+  }
+
+  function testWithinLimits()
+  {
+    const valOut = parseFloat(fields.valOut.value);
+    const minFail = parseFloat(fields.minFail.value);
+    const maxFail = parseFloat(fields.maxFail.value);
+
+    const valid = [valOut, minFail, maxFail].every(Number.isFinite);
+
+    fields.failLo.classList.toggle("show", valid && valOut <= minFail);
+    fields.failHi.classList.toggle("show", valid && valOut >= maxFail);
+  }
+
+  function saveSettings()
+  {
+    const data =
+    {
+      minRaw: fields.minRaw.value,
+      maxRaw: fields.maxRaw.value,
+      minEU: fields.minEU.value,
+      maxEU: fields.maxEU.value,
+      valIn: fields.valIn.value
+    };
+
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  }
+
+  function calculateFromRaw()
+  {
+    const rawVal = toNumber(fields.valIn);
+
+    if (rawVal === null)
+    {
+      return;
+    }
+
+    const euVal = calculateValue(rawVal);
+
+    fields.valOut.value = euVal === null ? "" : euVal;
+
+    const maVal = calculateMAFromEU(euVal);
+
+    fields.mAIn.value = maVal === null ? "" : maVal;
+
+    calculateLimits();
+    testWithinLimits();
+    saveSettings();
+  }
+
+  function calculateFromEU()
+  {
+    const euVal = toNumber(fields.valOut);
+
+    if (euVal === null)
+    {
+      return;
+    }
+
+    const rawVal = calculateRawFromEU(euVal);
+
+    fields.valIn.value = rawVal === null ? "" : rawVal;
+
+    const maVal = calculateMAFromEU(euVal);
+
+    fields.mAIn.value = maVal === null ? "" : maVal;
+
+    calculateLimits();
+    testWithinLimits();
+    saveSettings();
+  }
+
+  function setRawByPercent(percent)
+  {
+    const minRaw = toNumber(fields.minRaw);
+    const maxRaw = toNumber(fields.maxRaw);
+
+    if (minRaw === null || maxRaw === null)
+    {
+      return;
+    }
+
+    const rawVal = minRaw + ((maxRaw - minRaw) * percent);
+
+    fields.valIn.value = round3(rawVal);
+
+    calculateFromRaw();
+  }
+
+  function loadSettings()
+  {
+    let saved = {};
+
+    try
+    {
+      saved = JSON.parse(localStorage.getItem(storageKey)) || {};
+    }
+    catch (err)
+    {
+      saved = {};
+    }
+
+    fields.minRaw.value = saved.minRaw ?? defaults.minRaw;
+    fields.maxRaw.value = saved.maxRaw ?? defaults.maxRaw;
+    fields.minEU.value = saved.minEU ?? defaults.minEU;
+    fields.maxEU.value = saved.maxEU ?? defaults.maxEU;
+    fields.valIn.value = saved.valIn ?? defaults.valIn;
+  }
+
+  [fields.minRaw, fields.maxRaw, fields.minEU, fields.maxEU].forEach(function (input)
+  {
+    input.addEventListener("input", calculateFromRaw);
+  });
+
+  fields.valIn.addEventListener("input", calculateFromRaw);
+  fields.valOut.addEventListener("input", calculateFromEU);
+
+  document.querySelectorAll(".as-percent-button").forEach(function (button)
+  {
+    button.addEventListener("click", function ()
+    {
+      setRawByPercent(parseFloat(button.dataset.percent));
+    });
+  });
+
+  loadSettings();
+  calculateFromRaw();
+}
+
+      init();
+    })();
+})();
