@@ -14,6 +14,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  if (!session)
+  {
+      window.location.href = "auth-login.html";
+  }
+
   <link
     rel="stylesheet"
     href="https://jneauto.github.io/jnea_css/jnea-theme.css"
