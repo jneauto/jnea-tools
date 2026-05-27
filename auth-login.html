@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JNE Login</title>
+    <link rel="stylesheet" href="https://jneauto.github.io/jnea_css/jnea-theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: var(--jne-font, Arial, sans-serif);
+            background: var(--jne-bg);
+            color: var(--jne-text);
+        }
+
+        .auth-wrap {
+            max-width: 460px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: var(--jne-radius-lg);
+            box-shadow: var(--jne-shadow-lg);
+            padding: 26px;
+        }
+
+        .auth-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            color: var(--jne-muted);
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--jne-border);
+            border-radius: var(--jne-radius-md);
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            border: 0;
+            border-radius: var(--jne-radius-md);
+            background: var(--jne-primary);
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .auth-link {
+            display: block;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .message {
+            margin-top: 16px;
+            padding: 10px;
+            border-radius: var(--jne-radius-md);
+            display: none;
+        }
+
+        .message.ok {
+            display: block;
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .message.err {
+            display: block;
+            background: #ffebee;
+            color: #b71c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <div class="auth-title">JNE Login</div>
+            <div class="auth-subtitle">Use the email address that was invited to this site.</div>
+
+            <form id="loginForm">
+                <label for="email">Email</label>
+                <input id="email" type="email" autocomplete="email" required />
+
+                <label for="password">Password</label>
+                <input id="password" type="password" autocomplete="current-password" required />
+
+                <button type="submit">Log In</button>
+            </form>
+
+            <a class="auth-link" href="auth-forgot-password.html">Forgot password?</a>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://xxvvvipivmfmqfeevqok.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4dnZ2aXBpdm1mbXFmZWV2cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjUzNTMsImV4cCI6MjA5NTQ0MTM1M30.hLzj2g3RuRZRvssMG1tNg538ZdPfWHvofhMZta56lxA";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const loginForm = document.getElementById("loginForm");
+        const messageBox = document.getElementById("message");
+
+        function showMessage(text, type)
+        {
+            messageBox.textContent = text;
+            messageBox.className = "message " + type;
+        }
+
+        loginForm.addEventListener("submit", async function(event)
+        {
+            event.preventDefault();
+
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+
+            const result = await supabaseClient.auth.signInWithPassword(
+            {
+                email: email,
+                password: password
+            });
+
+            if (result.error)
+            {
+                showMessage(result.error.message, "err");
+                return;
+            }
+
+            showMessage("Login successful. Redirecting...", "ok");
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+</html>
