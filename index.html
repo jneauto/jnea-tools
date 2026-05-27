@@ -640,6 +640,165 @@
         `;
       }
 
+function uniqueValues(rows, field)
+{
+  return [...new Set(
+    rows
+      .map(function (r)
+      {
+        return String(r[field] || "").trim();
+      })
+      .filter(Boolean)
+  )].sort();
+}
+
+function findByPartNumber(rows, targetPartNumber)
+{
+  const target = String(targetPartNumber || "")
+    .trim()
+    .toUpperCase();
+
+  return rows.find(function (row)
+  {
+    return Object.keys(row).some(function (key)
+    {
+      const value = String(row[key] || "")
+        .trim()
+        .toUpperCase();
+
+      return value === target;
+    });
+  });
+}
+
+function renderPlcResults(cards, fuseHolders, fuses)
+{
+  const results = document.getElementById("plcResults");
+
+  if (!cards.length)
+  {
+    results.innerHTML = `
+      <div style="margin-top:18px;">
+        No matching PLC cards found.
+      </div>
+    `;
+
+    return;
+  }
+
+  results.innerHTML = cards.map(function (card)
+  {
+    const holderPart =
+      card.recommendeddcholderpartnumber ||
+      card.recommendedacholderpartnumber ||
+      "";
+
+    const holder = findByPartNumber(fuseHolders, holderPart);
+
+    const fuse = findByPartNumber(
+      fuses,
+      card.recommendedfusepartnumber
+    );
+
+    return `
+      <div
+        style="
+          margin-top:18px;
+          border-top:1px solid #ddd;
+          padding-top:18px;
+        "
+      >
+        <div
+          style="
+            font-size:22px;
+            font-weight:bold;
+            color:#0193cf;
+          "
+        >
+          ${card.cardpartnumber || ""}
+        </div>
+
+        <div style="margin-top:10px;">
+          <strong>Manufacturer:</strong>
+          ${card.mfg || ""}
+        </div>
+
+        <div>
+          <strong>Series:</strong>
+          ${card.series || ""}
+        </div>
+
+        <div>
+          <strong>Card Type:</strong>
+          ${card.cardtype || ""}
+        </div>
+
+        <div>
+          <strong>Description:</strong>
+          ${card.description || ""}
+        </div>
+
+        <div style="margin-top:14px;">
+          <strong>Recommended Fuse Holder:</strong>
+          ${holderPart || "No Match"}
+        </div>
+
+        <div>
+          <strong>Recommended Fuse:</strong>
+          ${card.recommendedfusepartnumber || "No Match"}
+        </div>
+
+        ${
+          card.notes
+            ? `
+              <div style="margin-top:14px;">
+                <strong>Notes:</strong><br>
+                ${card.notes}
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          card.partlink
+            ? `
+              <div style="margin-top:10px;">
+                <a
+                  href="${card.partlink}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open Manufacturer Link
+                </a>
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          holder
+            ? `
+              <div style="margin-top:14px;">
+                <strong>Fuse Holder Specs Found</strong>
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          fuse
+            ? `
+              <div>
+                <strong>Fuse Specs Found</strong>
+              </div>
+            `
+            : ""
+        }
+      </div>
+    `;
+  }).join("");
+}      
+
       function renderKnowledgePlaceholder()
       {
         document.getElementById("pageTitle").textContent = "Knowledge Files";
