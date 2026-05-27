@@ -504,22 +504,124 @@
         `;
       }
 
-      function renderPlcCardsPlaceholder()
+    async function renderPlcCardsPlaceholder()
+    {
+      document.getElementById("pageTitle").textContent = "PLC Card Fusing";
+    
+      const content = document.getElementById("content");
+    
+      content.innerHTML = `
+        <div class="card">
+          Loading PLC card database...
+        </div>
+      `;
+    
+      try
       {
-        document.getElementById("pageTitle").textContent = "PLC Card Fusing";
-
-        document.getElementById("content").innerHTML = `
+        const plcResponse = await sb
+          .from("plccards")
+          .select("*")
+          .order("cardpartnumber");
+    
+        if (plcResponse.error)
+        {
+          throw plcResponse.error;
+        }
+    
+        const fuseHolderResponse = await sb
+          .from("fuseholdercatalog")
+          .select("*");
+    
+        if (fuseHolderResponse.error)
+        {
+          throw fuseHolderResponse.error;
+        }
+    
+        const fuseResponse = await sb
+          .from("fusecatalog")
+          .select("*");
+    
+        if (fuseResponse.error)
+        {
+          throw fuseResponse.error;
+        }
+    
+        const cards = plcResponse.data || [];
+        const fuseHolders = fuseHolderResponse.data || [];
+        const fuses = fuseResponse.data || [];
+    
+        console.log("PLC Cards:", cards);
+        console.log("Fuse Holders:", fuseHolders);
+        console.log("Fuses:", fuses);
+    
+        const manufacturers = uniqueValues(cards, "mfg");
+    
+        content.innerHTML = `
+          <div class="card">
+            <h2 style="margin-top:0;">
+              PLC Card Fusing Guide
+            </h2>
+    
+            <p>
+              Select a PLC card and view recommended fuse information.
+            </p>
+    
+            <div class="form-group">
+              <label>Manufacturer</label>
+    
+              <select id="plcMfgSelect" class="tool-select">
+                <option value="">Select...</option>
+    
+                ${manufacturers.map(function (mfg)
+                {
+                  return `<option value="${mfg}">${mfg}</option>`;
+                }).join("")}
+              </select>
+            </div>
+    
+            <div id="plcResults"></div>
+          </div>
+        `;
+    
+        const mfgSelect = document.getElementById("plcMfgSelect");
+    
+        mfgSelect.addEventListener("change", function ()
+        {
+          const selectedMfg = mfgSelect.value;
+    
+          const filteredCards = cards.filter(function (card)
+          {
+            return !selectedMfg || card.mfg === selectedMfg;
+          });
+    
+          renderPlcResults(
+            filteredCards,
+            fuseHolders,
+            fuses
+          );
+        });
+    
+        renderPlcResults(cards, fuseHolders, fuses);
+      }
+      catch (err)
+      {
+        console.error("PLC card load error:", err);
+    
+        content.innerHTML = `
           <div class="card">
             <h2>
               PLC Card Fusing
             </h2>
-
-            <p>
-              PLC card search module will go here next.
-            </p>
+    
+            <div style="color:#c62828;font-weight:bold;">
+              Could not load PLC card data.
+            </div>
+    
+            <pre>${err.message}</pre>
           </div>
         `;
       }
+    }
 
       function renderFuseGuidePlaceholder()
       {
