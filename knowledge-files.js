@@ -6,6 +6,9 @@ function renderKnowledgePlaceholder()
 
   content.innerHTML = `
     <div class="card">
+        <div id="kfAccessNotice" class="kf-access-notice">
+          Loading access instructions...
+        </div>
       <h2 style="margin-top:0;">
         Knowledge Files
       </h2>
@@ -13,6 +16,8 @@ function renderKnowledgePlaceholder()
       <p>
         Search how-to documents by topic, category, file type, or author.
       </p>
+
+      accessNotice: document.getElementById("kfAccessNotice"),
 
       <div id="kfAdminRow" class="kf-admin-row" style="display:none;">
         <button id="kfAddBtn" class="login-button" type="button" style="width:auto;">
@@ -523,6 +528,55 @@ function wireKnowledgeFilesTool()
     });
   }
 
+  async function renderAccessNotice()
+  {
+    const response = await sb
+      .from("profiles")
+      .select("full_name")
+      .eq("is_admin", true)
+      .order("full_name", { ascending: true });
+
+    if (response.error)
+    {
+      els.accessNotice.innerHTML = `
+        If you cannot view the files, you need to
+        <a
+          href="https://docs.google.com/presentation/d/1iydnc_Uu6EwbDLOqiJ4Z3PKiGdBK5Cn9tVbxODZNGQM/preview"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          complete this procedure
+        </a>
+        and request access to the Google Drive from an administrator.
+      `;
+
+      return;
+    }
+
+    const adminNames = (response.data || [])
+      .map(function (profile)
+      {
+        return String(profile.full_name || "").trim().split(/\s+/)[0];
+      })
+      .filter(Boolean);
+
+    const adminText = adminNames.length
+      ? adminNames.join(", ")
+      : "an administrator";
+
+    els.accessNotice.innerHTML = `
+      If you cannot view the files, you need to
+      <a
+        href="https://docs.google.com/presentation/d/1iydnc_Uu6EwbDLOqiJ4Z3PKiGdBK5Cn9tVbxODZNGQM/preview"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        complete this procedure
+      </a>
+      and request access to the Google Drive from: ${escapeHtml(adminText)}.
+    `;
+  }  
+
   async function checkAdmin()
   {
     const user = window.jnea.getCurrentUser();
@@ -622,5 +676,6 @@ function wireKnowledgeFilesTool()
     saveDialog();
   });
 
+  renderAccessNotice();
   checkAdmin().then(loadFiles);
 }
