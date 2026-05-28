@@ -23,8 +23,6 @@
 
   const app = document.getElementById("app");
 
-  let currentUser = null;
-
   window.jnea =
   {
     sb: sb,
