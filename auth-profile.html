@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+
+    <link rel="stylesheet" href="https://jneauto.github.io/jnea_css/jnea-theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: var(--jne-font, Arial, sans-serif);
+            background: var(--jne-bg);
+            color: var(--jne-text);
+        }
+
+        .auth-wrap {
+            max-width: 520px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: var(--jne-radius-lg);
+            box-shadow: var(--jne-shadow-lg);
+            padding: 26px;
+        }
+
+        .auth-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            color: var(--jne-muted);
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--jne-border);
+            border-radius: var(--jne-radius-md);
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        button,
+        .button-link {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            padding: 12px;
+            border: 0;
+            border-radius: var(--jne-radius-md);
+            background: var(--jne-primary);
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+
+        .button-secondary {
+            background: var(--jne-secondary);
+        }
+
+        .button-danger {
+            background: #b91c1c;
+        }
+
+        .message {
+            margin-top: 16px;
+            padding: 10px;
+            border-radius: var(--jne-radius-md);
+            display: none;
+        }
+
+        .message.ok {
+            display: block;
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .message.err {
+            display: block;
+            background: #ffebee;
+            color: #b71c1c;
+        }
+
+        .user-email {
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <div class="auth-title">Profile</div>
+            <div class="auth-subtitle">Manage your JNEA Tools account.</div>
+
+            <div id="userEmail" class="user-email"></div>
+
+            <form id="passwordForm">
+                <label for="password">New Password</label>
+                <input id="password" type="password" autocomplete="new-password" minlength="8" required />
+
+                <label for="confirmPassword">Confirm New Password</label>
+                <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required />
+
+                <button type="submit">Change Password</button>
+            </form>
+
+            <a class="button-link button-secondary" href="index.html">Back to Tools</a>
+
+            <button id="logoutButton" class="button-danger" type="button">Log Out</button>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://xxvvvipivmfmqfeevqok.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4dnZ2aXBpdm1mbXFmZWV2cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjUzNTMsImV4cCI6MjA5NTQ0MTM1M30.hLzj2g3RuRZRvssMG1tNg538ZdPfWHvofhMZta56lxA";
+
+        const supabaseClient = supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
+
+        const userEmail = document.getElementById("userEmail");
+        const passwordForm = document.getElementById("passwordForm");
+        const logoutButton = document.getElementById("logoutButton");
+        const messageBox = document.getElementById("message");
+
+        function showMessage(text, type)
+        {
+            messageBox.textContent = text;
+            messageBox.className = "message " + type;
+        }
+
+        async function requireLogin()
+        {
+            const result = await supabaseClient.auth.getSession();
+
+            if (!result.data.session)
+            {
+                window.location.href = "auth-login.html";
+                return null;
+            }
+
+            return result.data.session;
+        }
+
+        async function loadProfile()
+        {
+            const session = await requireLogin();
+
+            if (!session)
+            {
+                return;
+            }
+
+            userEmail.textContent = session.user.email;
+        }
+
+        passwordForm.addEventListener("submit", async function(event)
+        {
+            event.preventDefault();
+
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+
+            if (password !== confirmPassword)
+            {
+                showMessage("Passwords do not match.", "err");
+                return;
+            }
+
+            const result = await supabaseClient.auth.updateUser(
+            {
+                password: password
+            });
+
+            if (result.error)
+            {
+                showMessage(result.error.message, "err");
+                return;
+            }
+
+            passwordForm.reset();
+            showMessage("Password updated successfully.", "ok");
+        });
+
+        logoutButton.addEventListener("click", async function()
+        {
+            await supabaseClient.auth.signOut();
+            window.location.href = "auth-login.html";
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>
