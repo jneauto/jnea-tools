@@ -4,6 +4,9 @@
 
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4dnZ2aXBpdm1mbXFmZWV2cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjUzNTMsImV4cCI6MjA5NTQ0MTM1M30.hLzj2g3RuRZRvssMG1tNg538ZdPfWHvofhMZta56lxA";
 
+  let currentUser = null;
+  let currentProfile = null;
+
   const sb = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
@@ -46,6 +49,8 @@
     }
 
     currentUser = response.data.session.user;
+    
+    await loadCurrentProfile();
 
     renderAppShell();
     renderDashboard();
@@ -138,6 +143,8 @@
     status.textContent = "Login successful.";
 
     currentUser = response.data.user;
+    
+    await loadCurrentProfile();
 
     renderAppShell();
     renderDashboard();
@@ -151,6 +158,31 @@
 
     renderLogin();
   }
+
+    async function loadCurrentProfile()
+    {
+      const response = await sb
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", currentUser.id)
+        .single();
+    
+      if (
+        response.error ||
+        !response.data
+      )
+      {
+        currentProfile =
+        {
+          email: currentUser.email,
+          full_name: ""
+        };
+    
+        return;
+      }
+    
+      currentProfile = response.data;
+    }  
 
   function renderAppShell()
   {
@@ -185,9 +217,6 @@
             Analog Scaling
           </button>
 
-          <button class="nav-button" id="navProfile">
-            Profile
-          </button>
         </div>
 
         <div class="main">
@@ -196,11 +225,21 @@
               Dashboard
             </div>
 
-            <div class="user-box">
-              <div>
-                ${currentUser.email}
-              </div>
-            </div>
+          <div class="user-box">
+            <button
+              id="profileButton"
+              class="logout-button"
+              type="button"
+            >
+              ${
+                currentProfile &&
+                currentProfile.full_name
+                  ? currentProfile.full_name
+                  : currentUser.email
+              }
+            </button>
+          </div>
+            
           </div>
 
           <div id="content"></div>
@@ -213,10 +252,10 @@
     document.getElementById("navFuseGuide").addEventListener("click", renderFuseGuidePlaceholder);
     document.getElementById("navKnowledge").addEventListener("click", renderKnowledgePlaceholder);
     document.getElementById("navAnalogScale").addEventListener("click", renderAnalogScaleTool);
-    document.getElementById("navProfile").addEventListener("click", function ()
+    document.getElementById("profileButton").addEventListener("click", function ()
     {
       window.location.href = "auth-profile.html";
-    });
+    });    
   }
 
   function renderDashboard()
