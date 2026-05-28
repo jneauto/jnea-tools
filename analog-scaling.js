@@ -5,138 +5,183 @@ function renderAnalogScaleTool()
   const content = document.getElementById("content");
 
   content.innerHTML = `
+    <style>
+      .as-tool-wrap {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      .as-section-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+      }
+
+      .as-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(180px, 260px));
+        gap: 12px 16px;
+        align-items: end;
+      }
+
+      .as-live-grid {
+        display: grid;
+        grid-template-columns: minmax(180px, 260px);
+        gap: 12px;
+      }
+
+      .as-percent-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(44px, 1fr));
+        gap: 8px;
+        max-width: 420px;
+        margin-bottom: 14px;
+      }
+
+      .as-percent-button {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 9px 6px;
+        background: #f8f8f8;
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .as-percent-button:hover {
+        background: #eeeeee;
+      }
+
+      .as-status-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+
+      @media (max-width: 640px) {
+        .as-tool-wrap {
+          max-width: 100%;
+        }
+
+        .as-grid-2,
+        .as-live-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .as-percent-grid {
+          grid-template-columns: repeat(5, 1fr);
+          max-width: 100%;
+        }
+
+        .as-section-card {
+          padding-left: 14px;
+          padding-right: 14px;
+        }
+      }
+    </style>
+
     <div class="card">
-      <h2 style="margin-top:0;">
-        Analog Scaling Tool
-      </h2>
+      <div class="as-tool-wrap">
+        <h2 style="margin-top:0;">
+          Analog Scaling Tool
+        </h2>
 
-      <p>
-        Convert raw analog values to engineering units, reverse-calculate raw input, and check fail limits.
-      </p>
+        <p>
+          Convert raw analog values to engineering units, reverse-calculate raw input, and check fail limits.
+        </p>
 
-      <div
-        style="
-          display:grid;
-          grid-template-columns:1fr;
-          gap:18px;
-        "
-      >
-        <div class="card" style="box-shadow:none;border:1px solid #ddd;">
-          <h3 style="margin-top:0;">
-            Scale Setup
-          </h3>
+        <div style="display:grid;grid-template-columns:1fr;gap:18px;">
+          <div class="card as-section-card">
+            <h3 style="margin-top:0;">
+              Scale Setup
+            </h3>
 
-          <div
-            style="
-              display:grid;
-              grid-template-columns:1fr;
-              gap:12px;
-            "
-          >
-            <div class="form-group">
-              <label for="asMinRaw">Min Raw</label>
-              <input id="asMinRaw" class="tool-input" type="number" step="any">
-            </div>
+            <div class="as-grid-2">
+              <div class="form-group">
+                <label for="asMinRaw">Min Raw</label>
+                <input id="asMinRaw" class="tool-input" type="number" step="any">
+              </div>
 
-            <div class="form-group">
-              <label for="asMaxRaw">Max Raw</label>
-              <input id="asMaxRaw" class="tool-input" type="number" step="any">
-            </div>
-          </div>
+              <div class="form-group">
+                <label for="asMaxRaw">Max Raw</label>
+                <input id="asMaxRaw" class="tool-input" type="number" step="any">
+              </div>
 
-          <div
-            style="
-              display:grid;
-              grid-template-columns:1fr;
-              gap:12px;
-            "
-          >
-            <div class="form-group">
-              <label for="asMinEU">Min EU</label>
-              <input id="asMinEU" class="tool-input" type="number" step="any">
-            </div>
+              <div class="form-group">
+                <label for="asMinEU">Min EU</label>
+                <input id="asMinEU" class="tool-input" type="number" step="any">
+              </div>
 
-            <div class="form-group">
-              <label for="asMaxEU">Max EU</label>
-              <input id="asMaxEU" class="tool-input" type="number" step="any">
+              <div class="form-group">
+                <label for="asMaxEU">Max EU</label>
+                <input id="asMaxEU" class="tool-input" type="number" step="any">
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="card" style="box-shadow:none;border:1px solid #ddd;">
-          <h3 style="margin-top:0;">
-            Live Calculation
-          </h3>
+          <div class="card as-section-card">
+            <h3 style="margin-top:0;">
+              Live Calculation
+            </h3>
 
-          <div
-            style="
-              display:grid;
-              grid-template-columns:repeat(5, 1fr);
-              gap:8px;
-              margin-bottom:14px;
-            "
-          >
-            <button class="as-percent-button" type="button" data-percent="0">0%</button>
-            <button class="as-percent-button" type="button" data-percent="0.25">25%</button>
-            <button class="as-percent-button" type="button" data-percent="0.5">50%</button>
-            <button class="as-percent-button" type="button" data-percent="0.75">75%</button>
-            <button class="as-percent-button" type="button" data-percent="1">100%</button>
-          </div>
-
-          <div class="form-group">
-            <label for="asValIn">Raw Input</label>
-            <input id="asValIn" class="tool-input" type="number" step="any">
-          </div>
-
-          <div class="form-group">
-            <label for="asValOut">EU Value Out</label>
-            <input id="asValOut" class="tool-input" type="number" step="any">
-          </div>
-
-          <div class="form-group">
-            <label for="asmAIn">4–20 mA Input</label>
-            <input id="asmAIn" class="tool-input" type="text" readonly>
-          </div>
-
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <div id="asFailLo" class="as-status-pill">
-              Fail Lo
+            <div class="as-percent-grid">
+              <button class="as-percent-button" type="button" data-percent="0">0%</button>
+              <button class="as-percent-button" type="button" data-percent="0.25">25%</button>
+              <button class="as-percent-button" type="button" data-percent="0.5">50%</button>
+              <button class="as-percent-button" type="button" data-percent="0.75">75%</button>
+              <button class="as-percent-button" type="button" data-percent="1">100%</button>
             </div>
 
-            <div id="asFailHi" class="as-status-pill">
-              Fail Hi
+            <div class="as-live-grid">
+              <div class="form-group">
+                <label for="asValIn">Raw Input</label>
+                <input id="asValIn" class="tool-input" type="number" step="any">
+              </div>
+
+              <div class="form-group">
+                <label for="asValOut">EU Value Out</label>
+                <input id="asValOut" class="tool-input" type="number" step="any">
+              </div>
+
+              <div class="form-group">
+                <label for="asmAIn">4–20 mA Input</label>
+                <input id="asmAIn" class="tool-input" type="text" readonly>
+              </div>
+            </div>
+
+            <div class="as-status-row">
+              <div id="asFailLo" class="as-status-pill">
+                Fail Lo
+              </div>
+
+              <div id="asFailHi" class="as-status-pill">
+                Fail Hi
+              </div>
+            </div>
+          </div>
+
+          <div class="card as-section-card">
+            <h3 style="margin-top:0;">
+              Fail Limits
+            </h3>
+
+            <div class="as-grid-2">
+              <div class="form-group">
+                <label for="asMinFail">Min EU Fail</label>
+                <input id="asMinFail" class="tool-input" type="text" readonly>
+              </div>
+
+              <div class="form-group">
+                <label for="asMaxFail">Max EU Fail</label>
+                <input id="asMaxFail" class="tool-input" type="text" readonly>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="card" style="box-shadow:none;border:1px solid #ddd;">
-          <h3 style="margin-top:0;">
-            Fail Limits
-          </h3>
-
-          <div
-            style="
-              display:grid;
-              grid-template-columns:1fr;
-              gap:12px;
-            "
-          >
-            <div class="form-group">
-              <label for="asMinFail">Min EU Fail</label>
-              <input id="asMinFail" class="tool-input" type="text" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="asMaxFail">Max EU Fail</label>
-              <input id="asMaxFail" class="tool-input" type="text" readonly>
-            </div>
-          </div>
-        </div>
+        <p class="status">
+          Fail limits use the original VB.NET logic: raw span × 0.003125 is subtracted from Min Raw and added to Max Raw, then converted to engineering units.
+        </p>
       </div>
-
-      <p class="status">
-        Fail limits use the original VB.NET logic: raw span × 0.003125 is subtracted from Min Raw and added to Max Raw, then converted to engineering units.
-      </p>
     </div>
   `;
 
