@@ -17,8 +17,6 @@ function renderKnowledgePlaceholder()
         Search how-to documents by topic, category, file type, or author.
       </p>
 
-      accessNotice: document.getElementById("kfAccessNotice"),
-
       <div id="kfAdminRow" class="kf-admin-row" style="display:none;">
         <button id="kfAddBtn" class="login-button" type="button" style="width:auto;">
           Add Knowledge File
@@ -143,6 +141,7 @@ function wireKnowledgeFilesTool()
 
   const els =
   {
+    accessNotice: document.getElementById("kfAccessNotice"),
     adminRow: document.getElementById("kfAdminRow"),
     add: document.getElementById("kfAddBtn"),
     search: document.getElementById("kfSearchInput"),
