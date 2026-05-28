@@ -184,6 +184,10 @@
           <button class="nav-button" id="navAnalogScale">
             Analog Scaling
           </button>
+
+          <button class="nav-button" id="navProfile">
+            Profile
+          </button>
         </div>
 
         <div class="main">
@@ -196,13 +200,6 @@
               <div>
                 ${currentUser.email}
               </div>
-
-              <button
-                id="logoutButton"
-                class="logout-button"
-              >
-                Log Out
-              </button>
             </div>
           </div>
 
@@ -211,12 +208,15 @@
       </div>
     `;
 
-    document.getElementById("logoutButton").addEventListener("click", handleLogout);
     document.getElementById("navDashboard").addEventListener("click", renderDashboard);
     document.getElementById("navPlcCards").addEventListener("click", renderPlcCardsPlaceholder);
     document.getElementById("navFuseGuide").addEventListener("click", renderFuseGuidePlaceholder);
     document.getElementById("navKnowledge").addEventListener("click", renderKnowledgePlaceholder);
     document.getElementById("navAnalogScale").addEventListener("click", renderAnalogScaleTool);
+    document.getElementById("navProfile").addEventListener("click", function ()
+    {
+      window.location.href = "auth-profile.html";
+    });
   }
 
   function renderDashboard()
