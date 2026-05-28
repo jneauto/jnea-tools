@@ -116,6 +116,22 @@
 
             <div id="userEmail" class="user-email"></div>
 
+            <label for="fullName">Full Name</label>
+
+            <input
+                id="fullName"
+                type="text"
+                autocomplete="name"
+            />
+            
+            <button
+                id="saveProfileButton"
+                type="button"
+                class="button-secondary"
+            >
+                Save Profile
+            </button>
+
             <form id="passwordForm">
                 <label for="password">New Password</label>
                 <input id="password" type="password" autocomplete="new-password" minlength="8" required />
@@ -145,6 +161,10 @@
 
         const userEmail = document.getElementById("userEmail");
         const passwordForm = document.getElementById("passwordForm");
+        const fullNameInput = document.getElementById("fullName");
+
+        const saveProfileButton = document.getElementById("saveProfileButton");
+        
         const logoutButton = document.getElementById("logoutButton");
         const messageBox = document.getElementById("message");
 
@@ -170,13 +190,28 @@
         async function loadProfile()
         {
             const session = await requireLogin();
-
+        
             if (!session)
             {
                 return;
             }
-
+        
             userEmail.textContent = session.user.email;
+        
+            const profileResult = await supabaseClient
+                .from("profiles")
+                .select("full_name")
+                .eq("id", session.user.id)
+                .single();
+        
+            if (
+                !profileResult.error &&
+                profileResult.data
+            )
+            {
+                fullNameInput.value =
+                    profileResult.data.full_name || "";
+            }
         }
 
         passwordForm.addEventListener("submit", async function(event)
@@ -207,6 +242,48 @@
             showMessage("Password updated successfully.", "ok");
         });
 
+        saveProfileButton.addEventListener("click", async function ()
+        {
+            const sessionResult =
+                await supabaseClient.auth.getSession();
+        
+            const session = sessionResult.data.session;
+        
+            if (!session)
+            {
+                showMessage(
+                    "You are not logged in.",
+                    "err"
+                );
+        
+                return;
+            }
+        
+            const response = await supabaseClient
+                .from("profiles")
+                .update(
+                {
+                    full_name:
+                        fullNameInput.value.trim()
+                })
+                .eq("id", session.user.id);
+        
+            if (response.error)
+            {
+                showMessage(
+                    response.error.message,
+                    "err"
+                );
+        
+                return;
+            }
+        
+            showMessage(
+                "Profile updated successfully.",
+                "ok"
+            );
+        });
+        
         logoutButton.addEventListener("click", async function()
         {
             await supabaseClient.auth.signOut();
