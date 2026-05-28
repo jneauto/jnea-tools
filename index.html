@@ -32,24 +32,5 @@
   <script src="./analog-scaling.js"></script>
   <script src="./app-core.js"></script>
 
-  <script>
-      const SUPABASE_URL = "https://xxvvvipivmfmqfeevqok.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4dnZ2aXBpdm1mbXFmZWV2cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NjUzNTMsImV4cCI6MjA5NTQ0MTM1M30.hLzj2g3RuRZRvssMG1tNg538ZdPfWHvofhMZta56lxA";
-      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  
-      async function requireLogin()
-      {
-          const result = await supabaseClient.auth.getSession();
-  
-          if (!result.data.session)
-          {
-              window.location.href = "auth-login.html";
-              return;
-          }
-      }
-  
-      requireLogin();
-  </script>
-  
 </body>
 </html>
