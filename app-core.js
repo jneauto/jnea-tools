@@ -157,34 +157,37 @@
     renderLogin();
   }
 
-    async function loadCurrentProfile()
+  async function loadCurrentProfile()
+  {
+    currentProfile =
     {
-      const response = await sb
-        .from("profiles")
-        .select("email, full_name")
-        .eq("id", currentUser.id)
-        .single();
-
-      console.log("Profile response:", response);
-      console.log("Current user id:", currentUser.id);
-      console.log("Profile response:", response);
-    
-      if (
-        response.error ||
-        !response.data
-      )
-      {
-        currentProfile =
-        {
-          email: currentUser.email,
-          full_name: ""
-        };
-    
-        return;
-      }
-    
-      currentProfile = response.data;
-    }  
+      email: currentUser.email,
+      full_name: ""
+    };
+  
+    const response = await sb
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+  
+    console.log("Current user id:", currentUser.id);
+    console.log("Profile response:", response);
+  
+    if (
+      response.error ||
+      !response.data
+    )
+    {
+      return;
+    }
+  
+    currentProfile.email =
+      response.data.email || currentUser.email;
+  
+    currentProfile.full_name =
+      response.data.full_name || "";
+  }
 
   function renderAppShell()
   {
