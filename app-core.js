@@ -164,6 +164,8 @@
         .select("email, full_name")
         .eq("id", currentUser.id)
         .single();
+
+      console.log("Profile response:", response);
     
       if (
         response.error ||
