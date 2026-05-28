@@ -458,6 +458,22 @@ body
   color: #2e7d32;
 }
 
+.kf-access-notice {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #7c2d12;
+  padding: 14px 16px;
+  border-radius: var(--jne-radius-md);
+  margin-bottom: 18px;
+  line-height: 1.45;
+}
+
+.kf-access-notice a {
+  color: var(--jne-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 @media (max-width: 900px)
 {
   .app-shell
