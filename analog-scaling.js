@@ -17,7 +17,7 @@ function renderAnalogScaleTool()
       <div
         style="
           display:grid;
-          grid-template-columns:repeat(2, minmax(0, 1fr));
+          grid-template-columns:1fr;
           gap:18px;
         "
       >
@@ -29,7 +29,7 @@ function renderAnalogScaleTool()
           <div
             style="
               display:grid;
-              grid-template-columns:repeat(2, minmax(0, 1fr));
+              grid-template-columns:1fr;
               gap:12px;
             "
           >
@@ -47,7 +47,7 @@ function renderAnalogScaleTool()
           <div
             style="
               display:grid;
-              grid-template-columns:repeat(2, minmax(0, 1fr));
+              grid-template-columns:1fr;
               gap:12px;
             "
           >
