@@ -166,6 +166,8 @@
         .single();
 
       console.log("Profile response:", response);
+      console.log("Current user id:", currentUser.id);
+      console.log("Profile response:", response);
     
       if (
         response.error ||
