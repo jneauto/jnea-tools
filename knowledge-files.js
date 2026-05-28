@@ -676,6 +676,23 @@ function wireKnowledgeFilesTool()
     saveDialog();
   });
 
-  renderAccessNotice();
+  renderAccessNotice()
+    .catch(function (error)
+    {
+      console.warn("Access notice failed:", error);
+  
+      els.accessNotice.innerHTML = `
+        If you cannot view the files, you need to
+        <a
+          href="https://docs.google.com/presentation/d/1iydnc_Uu6EwbDLOqiJ4Z3PKiGdBK5Cn9tVbxODZNGQM/preview"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          complete this procedure
+        </a>
+        and request access to the Google Drive from an administrator.
+      `;
+    });
+  
   checkAdmin().then(loadFiles);
 }
