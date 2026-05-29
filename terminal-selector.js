@@ -213,9 +213,11 @@ async function initializeTerminalSelector()
     const status = document.getElementById("tsStatus");
     const results = document.getElementById("tsResults");
 
-    if (!window.sb)
+    const supabaseClient = getSupabaseClientForTerminalSelector();
+    
+    if (!supabaseClient)
     {
-        status.textContent = "Supabase client was not found. Make sure app-core.js creates window.sb.";
+        status.textContent = "Supabase client was not found. Check that app-core.js is loaded before terminal-selector.js.";
         return;
     }
 
@@ -226,9 +228,9 @@ async function initializeTerminalSelector()
             blocksResponse,
             seriesResponse
         ] = await Promise.all([
-            sb.from("terminalstandards").select("*").order("functionuse"),
-            sb.from("terminalblocks").select("*").order("preferred", { ascending: false }).order("alias"),
-            sb.from("terminalseries").select("*").order("series_id")
+            supabaseClient.from("terminalstandards").select("*").order("functionuse"),
+            supabaseClient.from("terminalblocks").select("*").order("preferred", { ascending: false }).order("alias"),
+            supabaseClient.from("terminalseries").select("*").order("series_id")
         ]);
 
         if (standardsResponse.error)
@@ -565,4 +567,24 @@ function escapeHtml(value)
 function escapeAttribute(value)
 {
     return escapeHtml(value);
+}
+
+function getSupabaseClientForTerminalSelector()
+{
+    if (window.sb)
+    {
+        return window.sb;
+    }
+
+    if (typeof sb !== "undefined")
+    {
+        return sb;
+    }
+
+    if (window.supabaseClient)
+    {
+        return window.supabaseClient;
+    }
+
+    return null;
 }
