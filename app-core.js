@@ -214,6 +214,10 @@
             Fuse Guide
           </button>
 
+          <button class="nav-button" id="navTerminalSelector">
+              Terminal Selector
+          </button>
+
           <button class="nav-button" id="navKnowledge">
             Knowledge Files
           </button>
@@ -255,6 +259,7 @@
     document.getElementById("navDashboard").addEventListener("click", renderDashboard);
     document.getElementById("navPlcCards").addEventListener("click", renderPlcCardsPlaceholder);
     document.getElementById("navFuseGuide").addEventListener("click", renderFuseGuidePlaceholder);
+    document.getElementById("navTerminalSelector").addEventListener("click", renderTerminalSelectorTool);
     document.getElementById("navKnowledge").addEventListener("click", renderKnowledgePlaceholder);
     document.getElementById("navAnalogScale").addEventListener("click", renderAnalogScaleTool);
     document.getElementById("profileButton").addEventListener("click", function ()
