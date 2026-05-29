@@ -1,590 +1,650 @@
 function renderTerminalSelectorTool()
 {
-    document.getElementById("pageTitle").textContent = "Terminal Block Selector";
+  document.getElementById("pageTitle").textContent = "Terminal Block Selector";
 
-    const content = document.getElementById("content");
+  const content = document.getElementById("content");
 
-    content.innerHTML = `
-        <div class="card">
-            <h2 style="margin-top:0;">
-                Terminal Block Selector
-            </h2>
+  content.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">
+        Terminal Block Selector
+      </h2>
 
-            <p>
-                Answer a few questions and this tool will suggest a JNE-standard terminal block.
-            </p>
+      <p>
+        Answer a few questions and this tool will suggest a JNE-standard terminal block.
+      </p>
 
-            <div class="terminal-selector-wrap">
-                <div class="terminal-form-grid">
-                    <label>
-                        What are you trying to do?
-                        <select id="tsFunctionUse">
-                            <option value="">Loading options...</option>
-                        </select>
-                    </label>
+      <div
+        style="
+          display:inline-block;
+          background:#ffd54f;
+          color:#4e3b00;
+          border:1px solid #e0b400;
+          border-radius:999px;
+          padding:6px 12px;
+          font-size:12px;
+          font-weight:bold;
+          letter-spacing:0.4px;
+          margin-bottom:18px;
+        "
+      >
+        GUIDE ONLY — verify selection before use.
+      </div>
 
-                    <label>
-                        Voltage / Use Case
-                        <select id="tsUseCase">
-                            <option value="">Any</option>
-                        </select>
-                    </label>
+      <div class="terminal-selector-wrap">
+        <div class="terminal-form-grid">
+          <label>
+            What are you trying to do?
+            <select id="tsFunctionUse" class="tool-select">
+              <option value="">Loading options...</option>
+            </select>
+          </label>
 
-                    <label>
-                        Preferred Series
-                        <select id="tsSeries">
-                            <option value="">Any</option>
-                        </select>
-                    </label>
+          <label>
+            Voltage / Use Case
+            <select id="tsUseCase" class="tool-select">
+              <option value="">Any</option>
+            </select>
+          </label>
 
-                    <label>
-                        Fused?
-                        <select id="tsFused">
-                            <option value="">Any</option>
-                            <option value="true">Fused only</option>
-                            <option value="false">Non-fused only</option>
-                        </select>
-                    </label>
-                </div>
+          <label>
+            Preferred Series
+            <select id="tsSeries" class="tool-select">
+              <option value="">Any</option>
+            </select>
+          </label>
 
-                <div class="terminal-actions">
-                    <button id="tsSearchBtn" class="login-button" type="button">
-                        Suggest Terminals
-                    </button>
-                    <button id="tsResetBtn" class="login-button secondary" type="button">
-                        Reset
-                    </button>
-                </div>
-
-                <div id="tsStatus" class="terminal-status">
-                    Loading terminal data...
-                </div>
-
-                <div id="tsResults" class="terminal-results"></div>
-            </div>
+          <label>
+            Fused?
+            <select id="tsFused" class="tool-select">
+              <option value="">Any</option>
+              <option value="true">Fused only</option>
+              <option value="false">Non-fused only</option>
+            </select>
+          </label>
         </div>
 
-        <style>
-            .terminal-selector-wrap {
-                margin-top: 18px;
-            }
+        <div class="terminal-actions">
+          <button id="tsSearchBtn" class="login-button" type="button">
+            Suggest Terminals
+          </button>
 
-            .terminal-form-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-                gap: 14px;
-                align-items: end;
-            }
+          <button id="tsResetBtn" class="login-button" type="button" style="background:#6b7280;">
+            Reset
+          </button>
+        </div>
 
-            .terminal-form-grid label {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                font-weight: 700;
-                color: var(--jne-text, #1f2937);
-            }
+        <div id="tsStatus" class="terminal-status">
+          Loading terminal data...
+        </div>
 
-            .terminal-form-grid select {
-                width: 100%;
-                max-width: 320px;
-                padding: 10px 12px;
-                border: 1px solid var(--jne-border, #d1d5db);
-                border-radius: 10px;
-                font-size: 15px;
-                background: white;
-            }
+        <div id="tsResults" class="terminal-results"></div>
+      </div>
+    </div>
 
-            .terminal-actions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin-top: 16px;
-            }
+    <style>
+      .terminal-selector-wrap {
+        margin-top: 18px;
+      }
 
-            .terminal-actions .secondary {
-                background: #6b7280;
-            }
+      .terminal-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 14px;
+        align-items: end;
+      }
 
-            .terminal-status {
-                margin-top: 16px;
-                color: var(--jne-muted, #6b7280);
-                font-size: 14px;
-            }
+      .terminal-form-grid label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-weight: 700;
+      }
 
-            .terminal-results {
-                display: grid;
-                gap: 12px;
-                margin-top: 16px;
-            }
+      .terminal-form-grid select {
+        width: 100%;
+        max-width: 320px;
+      }
 
-            .terminal-result-card {
-                border: 1px solid var(--jne-border, #d1d5db);
-                border-radius: 14px;
-                padding: 14px;
-                background: #fff;
-                box-shadow: var(--jne-shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
-            }
+      .terminal-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
 
-            .terminal-result-header {
-                display: flex;
-                justify-content: space-between;
-                gap: 12px;
-                flex-wrap: wrap;
-                margin-bottom: 8px;
-            }
+      .terminal-status {
+        margin-top: 16px;
+        color: var(--jne-muted, #6b7280);
+        font-size: 14px;
+      }
 
-            .terminal-result-title {
-                font-size: 18px;
-                font-weight: 800;
-            }
+      .terminal-results {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
 
-            .terminal-badge {
-                display: inline-flex;
-                align-items: center;
-                border-radius: 999px;
-                padding: 4px 9px;
-                font-size: 12px;
-                font-weight: 800;
-                background: #eef2ff;
-                color: #1f2937;
-                white-space: nowrap;
-            }
+      .terminal-result-card {
+        border: 1px solid var(--jne-border, #d1d5db);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+        box-shadow: var(--jne-shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+      }
 
-            .terminal-detail-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                gap: 8px 14px;
-                font-size: 14px;
-                margin-top: 8px;
-            }
+      .terminal-result-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
 
-            .terminal-detail-grid div span {
-                display: block;
-                color: var(--jne-muted, #6b7280);
-                font-size: 12px;
-                font-weight: 700;
-                text-transform: uppercase;
-            }
+      .terminal-result-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #005bbb;
+      }
 
-            .terminal-link {
-                display: inline-block;
-                margin-top: 12px;
-                font-weight: 800;
-            }
+      .terminal-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 12px;
+        font-weight: 800;
+        background: #eef2ff;
+        color: #1f2937;
+        white-space: nowrap;
+        margin-left: 4px;
+        margin-bottom: 4px;
+      }
 
-            @media (max-width: 600px) {
-                .terminal-form-grid {
-                    grid-template-columns: 1fr;
-                }
+      .terminal-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 8px 14px;
+        font-size: 14px;
+        margin-top: 8px;
+      }
 
-                .terminal-form-grid select {
-                    max-width: none;
-                }
+      .terminal-detail-grid div span {
+        display: block;
+        color: var(--jne-muted, #6b7280);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
 
-                .terminal-actions {
-                    flex-direction: column;
-                }
+      .terminal-link {
+        display: inline-block;
+        margin-top: 12px;
+        font-weight: 800;
+      }
 
-                .terminal-actions button {
-                    width: 100%;
-                }
-            }
-        </style>
-    `;
+      @media (max-width: 600px) {
+        .terminal-form-grid {
+          grid-template-columns: 1fr;
+        }
 
-    initializeTerminalSelector();
+        .terminal-form-grid select {
+          max-width: none;
+        }
+
+        .terminal-actions {
+          flex-direction: column;
+        }
+
+        .terminal-actions button {
+          width: 100%;
+        }
+      }
+    </style>
+  `;
+
+  initializeTerminalSelector();
 }
 
 async function initializeTerminalSelector()
 {
-    const state =
-    {
-        standards: [],
-        blocks: [],
-        series: []
-    };
+  const state =
+  {
+    standards: [],
+    blocks: [],
+    series: []
+  };
 
-    const functionSelect = document.getElementById("tsFunctionUse");
-    const useCaseSelect = document.getElementById("tsUseCase");
-    const seriesSelect = document.getElementById("tsSeries");
-    const fusedSelect = document.getElementById("tsFused");
-    const searchBtn = document.getElementById("tsSearchBtn");
-    const resetBtn = document.getElementById("tsResetBtn");
-    const status = document.getElementById("tsStatus");
-    const results = document.getElementById("tsResults");
+  const functionSelect = document.getElementById("tsFunctionUse");
+  const useCaseSelect = document.getElementById("tsUseCase");
+  const seriesSelect = document.getElementById("tsSeries");
+  const fusedSelect = document.getElementById("tsFused");
+  const searchBtn = document.getElementById("tsSearchBtn");
+  const resetBtn = document.getElementById("tsResetBtn");
+  const status = document.getElementById("tsStatus");
+  const results = document.getElementById("tsResults");
 
-    const supabaseClient = getSupabaseClientForTerminalSelector();
-    
-    if (!supabaseClient)
+  if (
+    !window.jnea ||
+    !window.jnea.sb
+  )
+  {
+    status.textContent = "Supabase client was not found. Make sure app-core.js creates window.jnea.sb.";
+    return;
+  }
+
+  const sb = window.jnea.sb;
+
+  try
+  {
+    const standardsResponse = await sb
+      .from("terminalstandards")
+      .select("*")
+      .order("functionuse");
+
+    const blocksResponse = await sb
+      .from("terminalblocks")
+      .select("*")
+      .order("preferred", { ascending: false })
+      .order("alias");
+
+    const seriesResponse = await sb
+      .from("terminalseries")
+      .select("*")
+      .order("series_id");
+
+    if (standardsResponse.error)
     {
-        status.textContent = "Supabase client was not found. Check that app-core.js is loaded before terminal-selector.js.";
-        return;
+      throw standardsResponse.error;
     }
 
-    try
+    if (blocksResponse.error)
     {
-        const [
-            standardsResponse,
-            blocksResponse,
-            seriesResponse
-        ] = await Promise.all([
-            supabaseClient.from("terminalstandards").select("*").order("functionuse"),
-            supabaseClient.from("terminalblocks").select("*").order("preferred", { ascending: false }).order("alias"),
-            supabaseClient.from("terminalseries").select("*").order("series_id")
-        ]);
-
-        if (standardsResponse.error)
-        {
-            throw standardsResponse.error;
-        }
-
-        if (blocksResponse.error)
-        {
-            throw blocksResponse.error;
-        }
-
-        if (seriesResponse.error)
-        {
-            throw seriesResponse.error;
-        }
-
-        state.standards = standardsResponse.data || [];
-        state.blocks = blocksResponse.data || [];
-        state.series = seriesResponse.data || [];
-
-        populateFilters(state);
-        status.textContent = "Choose your options, then press Suggest Terminals.";
-
-        searchBtn.addEventListener("click", function()
-        {
-            renderTerminalResults(state);
-        });
-
-        resetBtn.addEventListener("click", function()
-        {
-            functionSelect.value = "";
-            useCaseSelect.value = "";
-            seriesSelect.value = "";
-            fusedSelect.value = "";
-            results.innerHTML = "";
-            status.textContent = "Choose your options, then press Suggest Terminals.";
-        });
+      throw blocksResponse.error;
     }
-    catch (error)
+
+    if (seriesResponse.error)
     {
-        console.error("Terminal selector load error:", error);
-        status.textContent = "Could not load terminal selector data. Check Supabase RLS/policies and table names.";
+      throw seriesResponse.error;
     }
+
+    state.standards = standardsResponse.data || [];
+    state.blocks = blocksResponse.data || [];
+    state.series = seriesResponse.data || [];
+
+    populateTerminalFilters(state);
+
+    status.textContent = "Choose your options, then press Suggest Terminals.";
+
+    searchBtn.addEventListener("click", function()
+    {
+      renderTerminalResults(state);
+    });
+
+    resetBtn.addEventListener("click", function()
+    {
+      functionSelect.value = "";
+      useCaseSelect.value = "";
+      seriesSelect.value = "";
+      fusedSelect.value = "";
+      results.innerHTML = "";
+      status.textContent = "Choose your options, then press Suggest Terminals.";
+    });
+  }
+  catch (err)
+  {
+    console.error("Terminal selector load error:", err);
+
+    status.innerHTML = `
+      <div style="color:#c62828;font-weight:bold;">
+        Could not load terminal selector data.
+      </div>
+
+      <pre>${tsEscapeHtml(err.message || String(err))}</pre>
+    `;
+  }
 }
 
-function populateFilters(state)
+function populateTerminalFilters(state)
 {
-    const functionSelect = document.getElementById("tsFunctionUse");
-    const useCaseSelect = document.getElementById("tsUseCase");
-    const seriesSelect = document.getElementById("tsSeries");
+  const functionSelect = document.getElementById("tsFunctionUse");
+  const useCaseSelect = document.getElementById("tsUseCase");
+  const seriesSelect = document.getElementById("tsSeries");
 
-    const functionUses = uniqueSorted([
-        ...state.standards.map(row => row.functionuse),
-        ...state.blocks.flatMap(row => splitPipeValues(row.functionuse))
-    ]);
-
-    const useCases = uniqueSorted(
-        state.blocks.flatMap(row => splitPipeValues(row.usecase))
-    );
-
-    const series = uniqueSorted(
-        state.series.map(row => row.series_id)
-    );
-
-    functionSelect.innerHTML = `<option value="">Any</option>` + functionUses.map(value =>
+  const functionUses = tsUniqueSorted([
+    ...state.standards.map(function(row)
     {
-        return `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`;
-    }).join("");
-
-    useCaseSelect.innerHTML = `<option value="">Any</option>` + useCases.map(value =>
+      return row.functionuse;
+    }),
+    ...state.blocks.flatMap(function(row)
     {
-        return `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`;
-    }).join("");
+      return tsSplitList(row.functionuse);
+    })
+  ]);
 
-    seriesSelect.innerHTML = `<option value="">Any</option>` + series.map(value =>
+  const useCases = tsUniqueSorted(
+    state.blocks.flatMap(function(row)
     {
-        return `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`;
-    }).join("");
+      return tsSplitList(row.usecase);
+    })
+  );
+
+  const series = tsUniqueSorted(
+    state.series.map(function(row)
+    {
+      return row.series_id;
+    })
+  );
+
+  functionSelect.innerHTML = `<option value="">Any</option>` + functionUses.map(function(value)
+  {
+    return `
+      <option value="${tsEscapeAttribute(value)}">
+        ${tsEscapeHtml(value)}
+      </option>
+    `;
+  }).join("");
+
+  useCaseSelect.innerHTML = `<option value="">Any</option>` + useCases.map(function(value)
+  {
+    return `
+      <option value="${tsEscapeAttribute(value)}">
+        ${tsEscapeHtml(value)}
+      </option>
+    `;
+  }).join("");
+
+  seriesSelect.innerHTML = `<option value="">Any</option>` + series.map(function(value)
+  {
+    return `
+      <option value="${tsEscapeAttribute(value)}">
+        ${tsEscapeHtml(value)}
+      </option>
+    `;
+  }).join("");
 }
 
 function renderTerminalResults(state)
 {
-    const functionUse = document.getElementById("tsFunctionUse").value;
-    const useCase = document.getElementById("tsUseCase").value;
-    const seriesId = document.getElementById("tsSeries").value;
-    const fused = document.getElementById("tsFused").value;
-    const status = document.getElementById("tsStatus");
-    const results = document.getElementById("tsResults");
+  const functionUse = document.getElementById("tsFunctionUse").value;
+  const useCase = document.getElementById("tsUseCase").value;
+  const seriesId = document.getElementById("tsSeries").value;
+  const fused = document.getElementById("tsFused").value;
+  const status = document.getElementById("tsStatus");
+  const results = document.getElementById("tsResults");
 
-    const standard = state.standards.find(row =>
+  const standard = state.standards.find(function(row)
+  {
+    return tsNormalize(row.functionuse) === tsNormalize(functionUse);
+  });
+
+  let filtered = state.blocks.filter(function(block)
+  {
+    const blockFunctionUses = tsSplitList(block.functionuse);
+    const blockUseCases = tsSplitList(block.usecase);
+
+    const matchesFunction =
+      !functionUse ||
+      blockFunctionUses.some(function(value)
+      {
+        return tsNormalize(value) === tsNormalize(functionUse);
+      });
+
+    const matchesUseCase =
+      !useCase ||
+      blockUseCases.some(function(value)
+      {
+        return tsNormalize(value) === tsNormalize(useCase);
+      });
+
+    const matchesSeries =
+      !seriesId ||
+      tsNormalize(block.series_id) === tsNormalize(seriesId);
+
+    const matchesFused =
+      fused === "" ||
+      String(block.isfused) === fused;
+
+    return matchesFunction && matchesUseCase && matchesSeries && matchesFused;
+  });
+
+  if (
+    filtered.length === 0 &&
+    standard
+  )
+  {
+    filtered = state.blocks.filter(function(block)
     {
-        return normalizeText(row.functionuse) === normalizeText(functionUse);
+      const matchesStandardColor =
+        !standard.preferredcolor ||
+        tsNormalize(block.color) === tsNormalize(standard.preferredcolor);
+
+      const matchesStandardSeries =
+        !standard.preferredseries ||
+        tsNormalize(block.series_id) === tsNormalize(standard.preferredseries);
+
+      const matchesFused =
+        fused === "" ||
+        String(block.isfused) === fused;
+
+      return matchesStandardColor && matchesStandardSeries && matchesFused;
     });
+  }
 
-    let preferredColor = "";
-    let preferredSeries = "";
-    let preferredBlockType = "";
+  filtered = filtered.sort(function(a, b)
+  {
+    const scoreA = getTerminalScore(a, standard);
+    const scoreB = getTerminalScore(b, standard);
 
-    if (standard)
+    if (scoreB !== scoreA)
     {
-        preferredColor = standard.preferredcolor || "";
-        preferredSeries = standard.preferredseries || "";
-        preferredBlockType = standard.preferredblocktype || "";
+      return scoreB - scoreA;
     }
 
-    let filtered = state.blocks.filter(block =>
+    return String(a.alias || "").localeCompare(String(b.alias || ""));
+  });
+
+  if (!filtered.length)
+  {
+    results.innerHTML = "";
+    status.textContent = "No matching terminals found.";
+    return;
+  }
+
+  status.textContent = `Found ${filtered.length} matching terminal${filtered.length === 1 ? "" : "s"}.`;
+
+  results.innerHTML = filtered.map(function(block)
+  {
+    const series = state.series.find(function(row)
     {
-        const blockFunctionUses = splitPipeValues(block.functionuse);
-        const blockUseCases = splitPipeValues(block.usecase);
-
-        const matchesFunction =
-            !functionUse ||
-            blockFunctionUses.some(value => normalizeText(value) === normalizeText(functionUse)) ||
-            normalizeText(block.functionuse) === normalizeText(functionUse);
-
-        const matchesUseCase =
-            !useCase ||
-            blockUseCases.some(value => normalizeText(value) === normalizeText(useCase));
-
-        const matchesSeries =
-            !seriesId ||
-            normalizeText(block.series_id) === normalizeText(seriesId);
-
-        const matchesFused =
-            fused === "" ||
-            String(block.isfused) === fused;
-
-        return matchesFunction && matchesUseCase && matchesSeries && matchesFused;
+      return tsNormalize(row.series_id) === tsNormalize(block.series_id);
     });
 
-    if (filtered.length === 0 && standard)
-    {
-        filtered = state.blocks.filter(block =>
-        {
-            const matchesStandardColor =
-                !preferredColor ||
-                normalizeText(block.color) === normalizeText(preferredColor);
+    const preferredBadge = block.preferred ? `<span class="terminal-badge">Preferred</span>` : "";
+    const fusedBadge = block.isfused ? `<span class="terminal-badge">Fused</span>` : "";
+    const groundBadge = block.isgrounding ? `<span class="terminal-badge">Ground</span>` : "";
 
-            const matchesStandardSeries =
-                !preferredSeries ||
-                normalizeText(block.series_id) === normalizeText(preferredSeries);
-
-            return matchesStandardColor && matchesStandardSeries;
-        });
-    }
-
-    filtered = filtered.sort(function(a, b)
-    {
-        const scoreA = getTerminalScore(a, standard);
-        const scoreB = getTerminalScore(b, standard);
-
-        if (scoreB !== scoreA)
-        {
-            return scoreB - scoreA;
-        }
-
-        return String(a.alias || "").localeCompare(String(b.alias || ""));
-    });
-
-    if (filtered.length === 0)
-    {
-        results.innerHTML = "";
-        status.textContent = "No matching terminals found.";
-        return;
-    }
-
-    status.textContent = `Found ${filtered.length} matching terminal${filtered.length === 1 ? "" : "s"}.`;
-
-    results.innerHTML = filtered.map(block =>
-    {
-        const series = state.series.find(row =>
-        {
-            return normalizeText(row.series_id) === normalizeText(block.series_id);
-        });
-
-        const preferredBadge = block.preferred ? `<span class="terminal-badge">Preferred</span>` : "";
-        const fusedBadge = block.isfused ? `<span class="terminal-badge">Fused</span>` : "";
-        const groundBadge = block.isgrounding ? `<span class="terminal-badge">Ground</span>` : "";
-
-        return `
-            <div class="terminal-result-card">
-                <div class="terminal-result-header">
-                    <div>
-                        <div class="terminal-result-title">
-                            ${escapeHtml(block.alias || "")}
-                        </div>
-                        <div>
-                            ${escapeHtml(block.catno || "")}
-                        </div>
-                    </div>
-
-                    <div>
-                        ${preferredBadge}
-                        ${fusedBadge}
-                        ${groundBadge}
-                    </div>
-                </div>
-
-                <div class="terminal-detail-grid">
-                    <div>
-                        <span>Series</span>
-                        ${escapeHtml(block.series_id || "")}
-                    </div>
-                    <div>
-                        <span>Color</span>
-                        ${escapeHtml(block.color || "")}
-                    </div>
-                    <div>
-                        <span>Use Case</span>
-                        ${escapeHtml(block.usecase || "")}
-                    </div>
-                    <div>
-                        <span>Function</span>
-                        ${escapeHtml(block.functionuse || "")}
-                    </div>
-                    <div>
-                        <span>Connection</span>
-                        ${escapeHtml(series ? series.connectiontype : "")}
-                    </div>
-                    <div>
-                        <span>Wire Range</span>
-                        ${escapeHtml(series ? series.wirerange : "")}
-                    </div>
-                    <div>
-                        <span>Max Voltage</span>
-                        ${escapeHtml(series ? series.maxvoltage : "")}
-                    </div>
-                    <div>
-                        <span>Max Current</span>
-                        ${escapeHtml(series ? series.maxcurrent : "")}
-                    </div>
-                    <div>
-                        <span>Width</span>
-                        ${escapeHtml(series && series.widthmm ? series.widthmm + " mm" : "")}
-                    </div>
-                    <div>
-                        <span>Fuse Rating</span>
-                        ${escapeHtml(block.fuserating || series?.fusemaxcurrent || "")}
-                    </div>
-                </div>
-
-                ${block.partlink ? `
-                    <a class="terminal-link" href="${escapeAttribute(block.partlink)}" target="_blank" rel="noopener noreferrer">
-                        Open product page
-                    </a>
-                ` : ""}
+    return `
+      <div class="terminal-result-card">
+        <div class="terminal-result-header">
+          <div>
+            <div class="terminal-result-title">
+              ${tsEscapeHtml(block.alias || "")}
             </div>
-        `;
-    }).join("");
+
+            <div>
+              ${tsEscapeHtml(block.catno || "")}
+            </div>
+          </div>
+
+          <div>
+            ${preferredBadge}
+            ${fusedBadge}
+            ${groundBadge}
+          </div>
+        </div>
+
+        <div class="terminal-detail-grid">
+          <div>
+            <span>Series</span>
+            ${tsEscapeHtml(block.series_id || "")}
+          </div>
+
+          <div>
+            <span>Color</span>
+            ${tsEscapeHtml(block.color || "")}
+          </div>
+
+          <div>
+            <span>Use Case</span>
+            ${tsEscapeHtml(block.usecase || "")}
+          </div>
+
+          <div>
+            <span>Function</span>
+            ${tsEscapeHtml(block.functionuse || "")}
+          </div>
+
+          <div>
+            <span>Connection</span>
+            ${tsEscapeHtml(series ? series.connectiontype : "")}
+          </div>
+
+          <div>
+            <span>Block Type</span>
+            ${tsEscapeHtml(series ? series.blocktype : "")}
+          </div>
+
+          <div>
+            <span>Wire Range</span>
+            ${tsEscapeHtml(series ? series.wirerange : "")}
+          </div>
+
+          <div>
+            <span>Max Voltage</span>
+            ${tsEscapeHtml(series ? series.maxvoltage : "")}
+          </div>
+
+          <div>
+            <span>Max Current</span>
+            ${tsEscapeHtml(series ? series.maxcurrent : "")}
+          </div>
+
+          <div>
+            <span>Width</span>
+            ${tsEscapeHtml(series && series.widthmm ? series.widthmm + " mm" : "")}
+          </div>
+
+          <div>
+            <span>Fuse Size</span>
+            ${tsEscapeHtml(series ? series.fusesize : "")}
+          </div>
+
+          <div>
+            <span>Fuse Rating</span>
+            ${tsEscapeHtml(block.fuserating || (series ? series.fusemaxcurrent : ""))}
+          </div>
+        </div>
+
+        ${block.partlink ? `
+          <a class="terminal-link" href="${tsEscapeAttribute(block.partlink)}" target="_blank" rel="noopener noreferrer">
+            Open product page
+          </a>
+        ` : ""}
+      </div>
+    `;
+  }).join("");
 }
 
 function getTerminalScore(block, standard)
 {
-    let score = 0;
+  let score = 0;
 
-    if (block.preferred)
+  if (block.preferred)
+  {
+    score += 100;
+  }
+
+  if (standard)
+  {
+    if (tsNormalize(block.series_id) === tsNormalize(standard.preferredseries))
     {
-        score += 100;
+      score += 50;
     }
 
-    if (standard)
+    if (tsNormalize(block.color) === tsNormalize(standard.preferredcolor))
     {
-        if (normalizeText(block.series_id) === normalizeText(standard.preferredseries))
-        {
-            score += 50;
-        }
-
-        if (normalizeText(block.color) === normalizeText(standard.preferredcolor))
-        {
-            score += 30;
-        }
-
-        if (normalizeText(block.functionuse) === normalizeText(standard.functionuse))
-        {
-            score += 20;
-        }
+      score += 30;
     }
 
-    if (normalizeText(block.series_id).startsWith("PT"))
+    if (tsSplitList(block.functionuse).some(function(value)
     {
-        score += 10;
+      return tsNormalize(value) === tsNormalize(standard.functionuse);
+    }))
+    {
+      score += 20;
     }
+  }
 
-    return score;
+  if (tsNormalize(block.series_id).startsWith("pt"))
+  {
+    score += 10;
+  }
+
+  return score;
 }
 
-function splitPipeValues(value)
+function tsSplitList(value)
 {
-    if (!value)
+  return String(value || "")
+    .split(/[|,]/)
+    .map(function(item)
     {
-        return [];
-    }
-
-    return String(value)
-        .split("|")
-        .map(item => item.trim())
-        .filter(item => item.length > 0);
+      return item.trim();
+    })
+    .filter(Boolean);
 }
 
-function uniqueSorted(values)
+function tsUniqueSorted(values)
 {
-    return [...new Set(
-        values
-            .filter(value => value !== null && value !== undefined)
-            .map(value => String(value).trim())
-            .filter(value => value.length > 0)
-    )].sort(function(a, b)
-    {
-        return a.localeCompare(b);
-    });
+  return [...new Set(
+    values
+      .filter(function(value)
+      {
+        return value !== null && value !== undefined;
+      })
+      .map(function(value)
+      {
+        return String(value).trim();
+      })
+      .filter(Boolean)
+  )].sort(function(a, b)
+  {
+    return a.localeCompare(b);
+  });
 }
 
-function normalizeText(value)
+function tsNormalize(value)
 {
-    return String(value || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .replace("feed-through", "feed through")
-        .replace("a/c", "ac");
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/feed-through/g, "feed through")
+    .replace(/a\/c/g, "ac");
 }
 
-function escapeHtml(value)
+function tsEscapeHtml(value)
 {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function escapeAttribute(value)
+function tsEscapeAttribute(value)
 {
-    return escapeHtml(value);
-}
-
-function getSupabaseClientForTerminalSelector()
-{
-    if (window.sb)
-    {
-        return window.sb;
-    }
-
-    if (typeof sb !== "undefined")
-    {
-        return sb;
-    }
-
-    if (window.supabaseClient)
-    {
-        return window.supabaseClient;
-    }
-
-    return null;
+  return tsEscapeHtml(value);
 }
