@@ -189,6 +189,9 @@
   
     currentProfile.full_name =
       response.data.full_name || "";
+
+    currentProfile.is_admin =
+      response.data.is_admin === true;
   }
 
   function renderAppShell()
