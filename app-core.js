@@ -153,6 +153,7 @@
     await sb.auth.signOut();
 
     currentUser = null;
+    currentProfile = null;
 
     renderLogin();
   }
@@ -162,12 +163,13 @@
     currentProfile =
     {
       email: currentUser.email,
-      full_name: ""
+      full_name: "",
+      is_admin: false
     };
   
     const response = await sb
       .from("profiles")
-      .select("email, full_name")
+      .select("email, full_name, is_admin")
       .eq("id", currentUser.id)
       .maybeSingle();
   
@@ -226,6 +228,17 @@
             Analog Scaling
           </button>
 
+        ${
+          currentProfile &&
+          currentProfile.is_admin
+            ? `
+              <button class="nav-button" id="navCpqBuilder">
+                Panel Questionnaire Builder
+              </button>
+            `
+            : ""
+        }          
+
         </div>
 
         <div class="main">
@@ -262,6 +275,12 @@
     document.getElementById("navTerminalSelector").addEventListener("click", renderTerminalSelectorTool);
     document.getElementById("navKnowledge").addEventListener("click", renderKnowledgePlaceholder);
     document.getElementById("navAnalogScale").addEventListener("click", renderAnalogScaleTool);
+    const cpqBuilderButton = document.getElementById("navCpqBuilder");
+    
+    if (cpqBuilderButton)
+    {
+      cpqBuilderButton.addEventListener("click", renderControlPanelQuestionnaireBuilderPlaceholder);
+    }    
     document.getElementById("profileButton").addEventListener("click", function ()
     {
       window.location.href = "auth-profile.html";
