@@ -396,6 +396,29 @@ body
   cursor: pointer;
 }
 
+.cpqb-report-pill
+{
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1f2937;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cpqb-report-pill.selected
+{
+    background: #0193cf;
+    color: #ffffff;
+    border-color: #0193cf;
+}
+
+.cpqb-report-pill:hover
+{
+    border-color: #0193cf;
+}
+
 .as-percent-button
 {
   border: 1px solid #0193cf;
