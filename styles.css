@@ -419,6 +419,22 @@ body
     border-color: #0193cf;
 }
 
+.cpqb-drag-handle
+{
+    cursor: grab;
+}
+
+.cpqb-drag-handle:active
+{
+    cursor: grabbing;
+}
+
+.cpqb-drop-target
+{
+    outline: 3px dashed #0193cf;
+    outline-offset: 4px;
+}
+
 .as-percent-button
 {
   border: 1px solid #0193cf;
