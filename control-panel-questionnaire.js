@@ -316,7 +316,12 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
                 }
 
                 alert("Project saved.");
-                renderControlPanelQuestionnairePlaceholder();
+                
+                currentProject.answers = cpqClone(answers);
+                currentProject.project_name = projectName;
+                currentProject.customer_name = customerName;
+                
+                render();
                 return;
             }
 
@@ -338,7 +343,15 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
             }
 
             alert("Project created and saved.");
-            renderControlPanelQuestionnairePlaceholder();
+            
+            currentProject = response.data;
+            selectedProjectId = response.data.id;
+            savedProjects.unshift(response.data);
+            
+            answers = cpqClone(response.data.answers || {});
+            helperAnswers = cpqClone(answers._helpers || {});
+            
+            render();
         }
         catch (err)
         {
