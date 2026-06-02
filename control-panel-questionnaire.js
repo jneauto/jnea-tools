@@ -207,11 +207,25 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
             {
                 cpqSetAnswerFromInput(input, answers);
             });
-
+        
             input.addEventListener("change", function ()
             {
                 cpqSetAnswerFromInput(input, answers);
-                render();
+        
+                const questionId = input.dataset.cpqQuestion;
+                const question = cpqFindQuestion(sections, questionId);
+        
+                if (
+                    question &&
+                    (
+                        question.type === "select" ||
+                        question.type === "yesno" ||
+                        question.type === "multiselect"
+                    )
+                )
+                {
+                    render();
+                }
             });
         });
 
@@ -928,4 +942,20 @@ function cpqEscapeHtml(value)
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function cpqQuestionnaireHasVisibilityRules(questionnaire)
+{
+    const sections = questionnaire.sections || [];
+
+    return sections.some(function (section)
+    {
+        return (section.questions || []).some(function (question)
+        {
+            return (
+                question.visibleWhen ||
+                question.visiblewhen
+            );
+        });
+    });
 }
