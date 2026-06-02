@@ -231,6 +231,10 @@
             Analog Scaling
           </button>
 
+          <button class="nav-button" id="navCpq">
+            Control Panel Questionnaire
+          </button>
+
         ${
           currentProfile &&
           currentProfile.is_admin
@@ -279,6 +283,9 @@
     document.getElementById("navKnowledge").addEventListener("click", renderKnowledgePlaceholder);
     document.getElementById("navAnalogScale").addEventListener("click", renderAnalogScaleTool);
     const cpqBuilderButton = document.getElementById("navCpqBuilder");
+    document
+      .getElementById("navCpq")
+      .addEventListener("click", renderControlPanelQuestionnairePlaceholder);
     
     if (cpqBuilderButton)
     {
