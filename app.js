@@ -23,6 +23,7 @@
       const app = document.getElementById("app");
 
       let currentUser = null;
+      let currentProfile = null;
 
       async function init()
       {
@@ -41,9 +42,11 @@
         }
 
         currentUser = response.data.session.user;
-
+        
         console.log("Logged in user:", currentUser);
-
+        
+        await loadCurrentProfile();
+        
         renderAppShell();
         renderDashboard();
       }
@@ -139,7 +142,9 @@
         status.textContent = "Login successful.";
 
         currentUser = response.data.user;
-
+        
+        await loadCurrentProfile();
+        
         renderAppShell();
         renderDashboard();
       }
@@ -149,6 +154,8 @@
         await sb.auth.signOut();
 
         currentUser = null;
+
+        currentProfile = null;
 
         renderLogin();
       }
@@ -201,10 +208,14 @@
                 Analog Scaling
               </button>
 
-              <button
-                class="nav-button"
-                id="navpbqBuilder"
-              >
+                ${currentProfile && currentProfile.is_admin ? `
+                  <button
+                    class="nav-button"
+                    id="navpbqBuilder"
+                  >
+                    Panel Questionnaire Builder
+                  </button>
+                ` : ""}
                 Panel Questionnaire Builder
               </button>
 
@@ -260,9 +271,12 @@
           .getElementById("navAnalogScale")
           .addEventListener("click", renderAnalogScaleTool);
 
-        document
-          .getElementById("navpbqBuilder")
-          .addEventListener("click", renderControlPanelQuestionnaireBuilderPlaceholder);
+        const pbqBuilderButton = document.getElementById("navpbqBuilder");
+        
+        if (pbqBuilderButton)
+        {
+          pbqBuilderButton.addEventListener("click", renderControlPanelQuestionnaireBuilderPlaceholder);
+        }
       }
 
       function renderDashboard()
@@ -300,6 +314,32 @@
           </div>
         `;
       }
+
+async function loadCurrentProfile()
+{
+  const response = await sb
+    .from("profiles")
+    .select("email, full_name, is_admin")
+    .eq("id", currentUser.id)
+    .single();
+
+  if (
+    response.error ||
+    !response.data
+  )
+  {
+    currentProfile =
+    {
+      email: currentUser.email,
+      full_name: "",
+      is_admin: false
+    };
+
+    return;
+  }
+
+  currentProfile = response.data;
+}        
 
 async function renderPlcCardsPlaceholder()
 {
