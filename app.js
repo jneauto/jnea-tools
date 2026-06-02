@@ -201,6 +201,14 @@
                 Analog Scaling
               </button>
 
+              <button
+                class="nav-button"
+                id="navpbqBuilder"
+              >
+                Panel Questionnaire Builder
+              </button>
+
+
             </div>
 
             <div class="main">
@@ -251,6 +259,10 @@
         document
           .getElementById("navAnalogScale")
           .addEventListener("click", renderAnalogScaleTool);
+
+        document
+          .getElementById("navpbqBuilder")
+          .addEventListener("click", renderControlPanelQuestionnaireBuilderPlaceholder);
       }
 
       function renderDashboard()
