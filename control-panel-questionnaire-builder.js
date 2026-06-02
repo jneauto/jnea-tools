@@ -483,94 +483,119 @@ function cpqbNewQuestion()
 
 function cpqbRenderQuestionDialog(question)
 {
+    const showOptions =
+        question.type === "select" ||
+        question.type === "multiselect";
+
     return `
-        <div class="form-group">
-            <label>Question ID</label>
-            <input id="cpqbQuestionId" class="tool-input" value="${cpqbEscapeHtml(question.id || "")}">
-        </div>
+        <div style="display:grid;gap:18px;">
+            <div style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <h3 style="margin-top:0;">Basic Information</h3>
 
-        <div class="form-group">
-            <label>Label</label>
-            <input id="cpqbQuestionLabel" class="tool-input" value="${cpqbEscapeHtml(question.label || "")}">
-        </div>
+                <div class="form-group">
+                    <label>Question ID</label>
+                    <input id="cpqbQuestionId" class="tool-input" value="${cpqbEscapeHtml(question.id || "")}">
+                </div>
 
-        <div class="form-group">
-            <label>Type</label>
-            <select id="cpqbQuestionType" class="tool-select">
-                ${["text", "textarea", "number", "yesno", "select", "multiselect"].map(function (type)
-                {
-                    return `
-                        <option value="${type}" ${question.type === type ? "selected" : ""}>
-                            ${type}
-                        </option>
-                    `;
-                }).join("")}
-            </select>
-        </div>
+                <div class="form-group">
+                    <label>Label</label>
+                    <input id="cpqbQuestionLabel" class="tool-input" value="${cpqbEscapeHtml(question.label || "")}">
+                </div>
 
-        <div class="form-group">
-            <label>
-                <input id="cpqbQuestionRequired" type="checkbox" ${question.required ? "checked" : ""}>
-                Required
-            </label>
-        </div>
+                <div style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end;">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="cpqbQuestionType" class="tool-select">
+                            ${["text", "textarea", "number", "yesno", "select", "multiselect"].map(function (type)
+                            {
+                                return `
+                                    <option value="${type}" ${question.type === type ? "selected" : ""}>
+                                        ${type}
+                                    </option>
+                                `;
+                            }).join("")}
+                        </select>
+                    </div>
 
-        <div class="form-group">
-            <label>Help Text</label>
-            <textarea id="cpqbQuestionHelpText" class="tool-input" rows="3">${cpqbEscapeHtml(question.helpText || question.helptext || "")}</textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Options</label>
-            <textarea id="cpqbQuestionOptions" class="tool-input" rows="4">${cpqbEscapeHtml((question.options || []).join("\\n"))}</textarea>
-            <div class="status">One option per line. Used for select and multiselect questions.</div>
-        </div>
-
-        <div class="form-group">
-            <label>Reports</label>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
-                ${["quote", "engineering", "builder", "commissioning"].map(function (report)
-                {
-                    const checked = (question.reports || []).includes(report);
-
-                    return `
-                        <label>
-                            <input class="cpqbReportCheck" type="checkbox" value="${report}" ${checked ? "checked" : ""}>
-                            ${report}
-                        </label>
-                    `;
-                }).join("")}
+                    <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;font-weight:bold;">
+                        <input id="cpqbQuestionRequired" type="checkbox" ${question.required ? "checked" : ""}>
+                        Required
+                    </label>
+                </div>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label>
-                <input id="cpqbHasHelper" type="checkbox" ${question.helper ? "checked" : ""}>
-                Include Help Me Decide
-            </label>
-        </div>
+            <div id="cpqbOptionsSection" style="${showOptions ? "" : "display:none;"}border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <h3 style="margin-top:0;">Answer Options</h3>
 
-        <div class="form-group">
-            <label>Helper JSON</label>
-            <textarea id="cpqbHelperJson" class="tool-input" rows="12">${cpqbEscapeHtml(JSON.stringify(question.helper || cpqbDefaultHelper(), null, 2))}</textarea>
-            <div class="status">
-                For now, edit helper sub-questions and rules as JSON. The app can later get a visual helper editor.
+                <div class="form-group">
+                    <label>Options</label>
+                    <textarea id="cpqbQuestionOptions" class="tool-input" rows="5">${cpqbEscapeHtml((question.options || []).join("\\n"))}</textarea>
+                    <div class="status">One option per line. Used for select and multiselect questions.</div>
+                </div>
             </div>
+
+            <div style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <h3 style="margin-top:0;">Reports</h3>
+
+                <div id="cpqbReportPills" style="display:flex;gap:10px;flex-wrap:wrap;">
+                    ${["quote", "engineering", "builder", "commissioning"].map(function (report)
+                    {
+                        const selected = (question.reports || []).includes(report);
+
+                        return `
+                            <button
+                                type="button"
+                                class="cpqb-report-pill ${selected ? "selected" : ""}"
+                                data-report="${report}"
+                            >
+                                ${selected ? "✓ " : ""}${cpqbEscapeHtml(report)}
+                            </button>
+                        `;
+                    }).join("")}
+                </div>
+            </div>
+
+            <details open style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <summary style="font-weight:bold;cursor:pointer;">
+                    Help Text
+                </summary>
+
+                <div class="form-group" style="margin-top:12px;">
+                    <textarea id="cpqbQuestionHelpText" class="tool-input" rows="3">${cpqbEscapeHtml(question.helpText || question.helptext || "")}</textarea>
+                </div>
+            </details>
+
+            <details style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <summary style="font-weight:bold;cursor:pointer;">
+                    Help Me Decide
+                </summary>
+
+                <div style="margin-top:12px;">
+                    <label style="display:flex;gap:8px;align-items:center;font-weight:bold;margin-bottom:12px;">
+                        <input id="cpqbHasHelper" type="checkbox" ${question.helper ? "checked" : ""}>
+                        Include Help Me Decide
+                    </label>
+
+                    <div class="form-group">
+                        <label>Helper JSON</label>
+                        <textarea id="cpqbHelperJson" class="tool-input" rows="12">${cpqbEscapeHtml(JSON.stringify(question.helper || cpqbDefaultHelper(), null, 2))}</textarea>
+                        <div class="status">
+                            Advanced: helper sub-questions and rules are edited as JSON for now.
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>
     `;
 }
 
 function cpqbReadQuestionDialog(dialog)
 {
-    const reports = [...dialog.querySelectorAll(".cpqbReportCheck")]
-        .filter(function (checkbox)
-        {
-            return checkbox.checked;
-        })
-        .map(function (checkbox)
-        {
-            return checkbox.value;
-        });
+	const reports = [...dialog.querySelectorAll(".cpqb-report-pill.selected")]
+		.map(function (button)
+		{
+			return button.dataset.report;
+		});
 
     const hasHelper = dialog.querySelector("#cpqbHasHelper").checked;
     let helper = null;
@@ -663,6 +688,36 @@ function cpqbShowDialog(title, bodyHtml, onSave)
     `;
 
     document.body.appendChild(overlay);
+	
+	overlay.querySelectorAll(".cpqb-report-pill").forEach(function (button)
+	{
+    button.addEventListener("click", function ()
+    {
+        button.classList.toggle("selected");
+
+        const report = button.dataset.report;
+        const selected = button.classList.contains("selected");
+
+        button.textContent = selected
+            ? "✓ " + report
+            : report;
+		});
+	});
+
+	const typeSelect = overlay.querySelector("#cpqbQuestionType");
+	const optionsSection = overlay.querySelector("#cpqbOptionsSection");
+
+	if (typeSelect && optionsSection)
+	{
+		typeSelect.addEventListener("change", function ()
+		{
+			const shouldShowOptions =
+				typeSelect.value === "select" ||
+				typeSelect.value === "multiselect";
+
+			optionsSection.style.display = shouldShowOptions ? "" : "none";
+		});
+	}
 
     overlay.querySelector("#cpqbDialogCancel").addEventListener("click", function ()
     {
