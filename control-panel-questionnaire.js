@@ -633,6 +633,10 @@ function cpqRenderQuestion(question, answers)
             </div>
         `;
     }
+    else if (question.type === "output")
+        {
+
+        }        
     else
     {
         inputHtml = `
