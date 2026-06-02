@@ -167,48 +167,63 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
             });
         });
 
-        document.querySelectorAll(".cpqb-draggable").forEach(function (item)
-        {
-            item.addEventListener("dragstart", function (event)
-            {
-                draggedItem = {
-                    type: item.dataset.dragType,
-                    sectionIndex: Number(item.dataset.sectionIndex),
-                    questionIndex: item.dataset.questionIndex === undefined
-                        ? null
-                        : Number(item.dataset.questionIndex)
-                };
+document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
+{
+    handle.addEventListener("dragstart", function (event)
+    {
+        draggedItem = {
+            type: handle.dataset.dragType,
+            sectionIndex: Number(handle.dataset.sectionIndex),
+            questionIndex: handle.dataset.questionIndex === undefined
+                ? null
+                : Number(handle.dataset.questionIndex)
+        };
 
-                event.dataTransfer.effectAllowed = "move";
-            });
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", JSON.stringify(draggedItem));
+    });
+});
 
-            item.addEventListener("dragover", function (event)
-            {
-                event.preventDefault();
-            });
-
-            item.addEventListener("drop", function (event)
-            {
-                event.preventDefault();
-
-                if (!draggedItem)
-                {
-                    return;
-                }
-
-                const target = {
-                    type: item.dataset.dragType,
-                    sectionIndex: Number(item.dataset.sectionIndex),
-                    questionIndex: item.dataset.questionIndex === undefined
-                        ? null
-                        : Number(item.dataset.questionIndex)
-                };
-
-                handleDrop(draggedItem, target);
-                draggedItem = null;
-                render();
-            });
-        });
+		document.querySelectorAll(".card[data-section-index], .cpqb-question-row").forEach(function (target)
+		{
+		    target.addEventListener("dragover", function (event)
+		    {
+		        event.preventDefault();
+		        target.classList.add("cpqb-drop-target");
+		    });
+		
+		    target.addEventListener("dragleave", function ()
+		    {
+		        target.classList.remove("cpqb-drop-target");
+		    });
+		
+		    target.addEventListener("drop", function (event)
+		    {
+		        event.preventDefault();
+		        event.stopPropagation();
+		
+		        target.classList.remove("cpqb-drop-target");
+		
+		        if (!draggedItem)
+		        {
+		            return;
+		        }
+		
+		        const isQuestionTarget = target.classList.contains("cpqb-question-row");
+		
+		        const targetData = {
+		            type: isQuestionTarget ? "question" : "section",
+		            sectionIndex: Number(target.dataset.sectionIndex),
+		            questionIndex: isQuestionTarget
+		                ? Number(target.dataset.questionIndex)
+		                : null
+		        };
+		
+		        handleDrop(draggedItem, targetData);
+		        draggedItem = null;
+		        render();
+		    });
+		});
     }
 
     function editSection(sectionIndex)
@@ -288,32 +303,60 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
         render();
     }
 
-    function handleDrop(from, to)
-    {
-        if (from.type === "section" && to.type === "section")
-        {
-            const moved = questionnaire.sections.splice(from.sectionIndex, 1)[0];
-            questionnaire.sections.splice(to.sectionIndex, 0, moved);
-            return;
-        }
-
-        if (from.type === "question" && to.type === "question")
-        {
-            const fromQuestions = questionnaire.sections[from.sectionIndex].questions;
-            const toQuestions = questionnaire.sections[to.sectionIndex].questions;
-
-            const moved = fromQuestions.splice(from.questionIndex, 1)[0];
-
-            let insertIndex = to.questionIndex;
-
-            if (from.sectionIndex === to.sectionIndex && from.questionIndex < to.questionIndex)
-            {
-                insertIndex = insertIndex - 1;
-            }
-
-            toQuestions.splice(insertIndex, 0, moved);
-        }
-    }
+	function handleDrop(from, to)
+	{
+	    if (from.type === "section")
+	    {
+	        if (to.type !== "section")
+	        {
+	            return;
+	        }
+	
+	        if (from.sectionIndex === to.sectionIndex)
+	        {
+	            return;
+	        }
+	
+	        const moved = questionnaire.sections.splice(from.sectionIndex, 1)[0];
+	
+	        let insertIndex = to.sectionIndex;
+	
+	        if (from.sectionIndex < to.sectionIndex)
+	        {
+	            insertIndex = insertIndex - 1;
+	        }
+	
+	        questionnaire.sections.splice(insertIndex, 0, moved);
+	        return;
+	    }
+	
+	    if (from.type === "question")
+	    {
+	        if (to.type !== "question")
+	        {
+	            return;
+	        }
+	
+	        const fromQuestions = questionnaire.sections[from.sectionIndex].questions;
+	        const toQuestions = questionnaire.sections[to.sectionIndex].questions;
+	
+	        if (!fromQuestions || !toQuestions)
+	        {
+	            return;
+	        }
+	
+	        const moved = fromQuestions.splice(from.questionIndex, 1)[0];
+	
+	        let insertIndex = to.questionIndex;
+	
+	        if (from.sectionIndex === to.sectionIndex && from.questionIndex < to.questionIndex)
+	        {
+	            insertIndex = insertIndex - 1;
+	        }
+	
+	        toQuestions.splice(insertIndex, 0, moved);
+	    }
+	}
 
     async function saveAsNewVersion()
     {
@@ -366,13 +409,11 @@ function cpqbRenderSection(section, sectionIndex)
     const questions = Array.isArray(section.questions) ? section.questions : [];
 
     return `
-        <div
-            class="card cpqb-draggable"
-            draggable="true"
-            data-drag-type="section"
-            data-section-index="${sectionIndex}"
-            style="border-left:5px solid #0193cf;margin-bottom:18px;"
-        >
+			<div
+			    class="card"
+			    data-section-index="${sectionIndex}"
+			    style="border-left:5px solid #0193cf;margin-bottom:18px;"
+			>
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                 <div>
                     <h3 style="margin-top:0;margin-bottom:4px;">
@@ -385,6 +426,17 @@ function cpqbRenderSection(section, sectionIndex)
                 </div>
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
+					<button
+					    class="login-button cpqb-drag-handle"
+					    type="button"
+					    draggable="true"
+					    data-drag-type="section"
+					    data-section-index="${sectionIndex}"
+					    style="width:auto;background:#64748b;"
+					>
+					    Drag Section
+					</button>
+
                     <button class="login-button" type="button" style="width:auto;" data-cpqb-add-question="${sectionIndex}">
                         Add Question
                     </button>
@@ -412,13 +464,11 @@ function cpqbRenderSection(section, sectionIndex)
 function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 {
     return `
-        <div
-            class="cpqb-draggable"
-            draggable="true"
-            data-drag-type="question"
-            data-section-index="${sectionIndex}"
-            data-question-index="${questionIndex}"
-            style="
+			<div
+			    class="cpqb-question-row"
+			    data-section-index="${sectionIndex}"
+			    data-question-index="${questionIndex}"
+			    style="
                 border:1px solid #ddd;
                 border-radius:10px;
                 padding:12px;
@@ -440,6 +490,17 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
                 </div>
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
+					<button
+					    class="login-button cpqb-drag-handle"
+					    type="button"
+					    draggable="true"
+					    data-drag-type="question"
+					    data-section-index="${sectionIndex}"
+					    data-question-index="${questionIndex}"
+					    style="width:auto;background:#64748b;"
+					>
+					    Drag
+					</button>				
                     <button
                         class="login-button"
                         type="button"
