@@ -538,6 +538,7 @@ function cpqbNewQuestion()
         helpText: "",
         options: [],
         reports: [],
+        visibleWhen: "",
         helper: null
     };
 }
@@ -547,6 +548,8 @@ function cpqbRenderQuestionDialog(question)
     const showOptions =
         question.type === "select" ||
         question.type === "multiselect";
+
+    const helper = question.helper || cpqbDefaultHelper();
 
     return `
         <div style="display:grid;gap:18px;">
@@ -567,14 +570,7 @@ function cpqbRenderQuestionDialog(question)
                     <div class="form-group">
                         <label>Type</label>
                         <select id="cpqbQuestionType" class="tool-select">
-                            ${["text", "textarea", "number", "yesno", "select", "multiselect"].map(function (type)
-                            {
-                                return `
-                                    <option value="${type}" ${question.type === type ? "selected" : ""}>
-                                        ${type}
-                                    </option>
-                                `;
-                            }).join("")}
+                            ${cpqbRenderTypeOptions(question.type)}
                         </select>
                     </div>
 
@@ -590,8 +586,26 @@ function cpqbRenderQuestionDialog(question)
 
                 <div class="form-group">
                     <label>Options</label>
-                    <textarea id="cpqbQuestionOptions" class="tool-input" rows="5">${cpqbEscapeHtml((question.options || []).join("\\n"))}</textarea>
-                    <div class="status">One option per line. Used for select and multiselect questions.</div>
+                    <textarea id="cpqbQuestionOptions" class="tool-input" rows="5">${cpqbEscapeHtml((question.options || []).join("\n"))}</textarea>
+                    <div class="status">One option per line.</div>
+                </div>
+            </div>
+
+            <div style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <h3 style="margin-top:0;">Visible When</h3>
+
+                <div class="form-group">
+                    <label>Visible When Rule</label>
+                    <input
+                        id="cpqbQuestionVisibleWhen"
+                        class="tool-input"
+                        placeholder="example: hasCustomerStandard=Yes|Unknown"
+                        value="${cpqbEscapeHtml(question.visibleWhen || question.visiblewhen || "")}"
+                    >
+
+                    <div class="status">
+                        Format: questionId=value or questionId=value1|value2. Leave blank to always show.
+                    </div>
                 </div>
             </div>
 
@@ -638,12 +652,34 @@ function cpqbRenderQuestionDialog(question)
                     </label>
 
                     <div class="form-group">
-                        <label>Helper JSON</label>
-                        <textarea id="cpqbHelperJson" class="tool-input" rows="12">${cpqbEscapeHtml(JSON.stringify(question.helper || cpqbDefaultHelper(), null, 2))}</textarea>
-                        <div class="status">
-                            Advanced: helper sub-questions and rules are edited as JSON for now.
-                        </div>
+                        <label>Helper Button Label</label>
+                        <input id="cpqbHelperButtonLabel" class="tool-input" value="${cpqbEscapeHtml(helper.buttonLabel || "Help me decide")}">
                     </div>
+
+                    <div class="form-group">
+                        <label>Helper Dialog Title</label>
+                        <input id="cpqbHelperTitle" class="tool-input" value="${cpqbEscapeHtml(helper.title || "Help choose answer")}">
+                    </div>
+
+                    <h4>Helper Sub-Questions</h4>
+
+                    <div id="cpqbHelperQuestions">
+                        ${cpqbRenderHelperQuestions(helper.questions || [])}
+                    </div>
+
+                    <button id="cpqbAddHelperQuestionBtn" class="login-button" type="button" style="width:auto;margin-top:8px;">
+                        Add Helper Question
+                    </button>
+
+                    <h4 style="margin-top:18px;">Helper Rules</h4>
+
+                    <div id="cpqbHelperRules">
+                        ${cpqbRenderHelperRules(helper.rules || [])}
+                    </div>
+
+                    <button id="cpqbAddHelperRuleBtn" class="login-button" type="button" style="width:auto;margin-top:8px;">
+                        Add Helper Rule
+                    </button>
                 </div>
             </details>
         </div>
@@ -652,26 +688,24 @@ function cpqbRenderQuestionDialog(question)
 
 function cpqbReadQuestionDialog(dialog)
 {
-	const reports = [...dialog.querySelectorAll(".cpqb-report-pill.selected")]
-		.map(function (button)
-		{
-			return button.dataset.report;
-		});
+    const reports = [...dialog.querySelectorAll(".cpqb-report-pill.selected")]
+        .map(function (button)
+        {
+            return button.dataset.report;
+        });
 
     const hasHelper = dialog.querySelector("#cpqbHasHelper").checked;
+
     let helper = null;
 
     if (hasHelper)
     {
-        try
-        {
-            helper = JSON.parse(dialog.querySelector("#cpqbHelperJson").value || "{}");
-        }
-        catch (err)
-        {
-            alert("Helper JSON is invalid: " + err.message);
-            throw err;
-        }
+        helper = {
+            buttonLabel: dialog.querySelector("#cpqbHelperButtonLabel").value.trim() || "Help me decide",
+            title: dialog.querySelector("#cpqbHelperTitle").value.trim() || "Help choose answer",
+            questions: cpqbReadHelperQuestions(dialog),
+            rules: cpqbReadHelperRules(dialog)
+        };
     }
 
     return {
@@ -687,9 +721,244 @@ function cpqbReadQuestionDialog(dialog)
                 return item.trim();
             })
             .filter(Boolean),
+        visibleWhen: dialog.querySelector("#cpqbQuestionVisibleWhen").value.trim(),
         reports: reports,
         helper: helper
     };
+}
+
+function cpqbRenderTypeOptions(selectedType)
+{
+    return ["text", "textarea", "number", "yesno", "select", "multiselect", "output"].map(function (type)
+    {
+        return `
+            <option value="${type}" ${selectedType === type ? "selected" : ""}>
+                ${type}
+            </option>
+        `;
+    }).join("");
+}
+
+function cpqbRenderHelperQuestions(questions)
+{
+    if (!Array.isArray(questions) || !questions.length)
+    {
+        return `
+            <div class="status">
+                No helper questions yet.
+            </div>
+        `;
+    }
+
+    return questions.map(function (question, index)
+    {
+        return cpqbRenderHelperQuestionEditor(question, index);
+    }).join("");
+}
+
+function cpqbRenderHelperQuestionEditor(question, index)
+{
+    const showOptions =
+        question.type === "select" ||
+        question.type === "multiselect";
+
+    return `
+        <div
+            class="cpqb-helper-question"
+            data-helper-question-index="${index}"
+            style="border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:10px;"
+        >
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <strong>Helper Question ${index + 1}</strong>
+
+                <button
+                    type="button"
+                    class="login-button cpqb-remove-helper-question"
+                    data-helper-question-index="${index}"
+                    style="width:auto;background:#c62828;"
+                >
+                    Remove
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Question ID</label>
+                <input class="tool-input cpqb-helper-question-id" value="${cpqbEscapeHtml(question.id || "")}">
+            </div>
+
+            <div class="form-group">
+                <label>Label</label>
+                <input class="tool-input cpqb-helper-question-label" value="${cpqbEscapeHtml(question.label || "")}">
+            </div>
+
+            <div class="form-group">
+                <label>Type</label>
+                <select class="tool-select cpqb-helper-question-type">
+                    ${cpqbRenderTypeOptions(question.type || "text")}
+                </select>
+            </div>
+
+            <div class="cpqb-helper-question-options-wrap" style="${showOptions ? "" : "display:none;"}">
+                <div class="form-group">
+                    <label>Options</label>
+                    <textarea class="tool-input cpqb-helper-question-options" rows="4">${cpqbEscapeHtml((question.options || []).join("\n"))}</textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Visible When</label>
+                <input
+                    class="tool-input cpqb-helper-question-visible-when"
+                    placeholder="example: helperQuestionId=Yes"
+                    value="${cpqbEscapeHtml(question.visibleWhen || question.visiblewhen || "")}"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Help Text</label>
+                <textarea class="tool-input cpqb-helper-question-help-text" rows="2">${cpqbEscapeHtml(question.helpText || question.helptext || "")}</textarea>
+            </div>
+        </div>
+    `;
+}
+
+function cpqbRenderHelperRules(rules)
+{
+    if (!Array.isArray(rules) || !rules.length)
+    {
+        return `
+            <div class="status">
+                No helper rules yet.
+            </div>
+        `;
+    }
+
+    return rules.map(function (rule, index)
+    {
+        return cpqbRenderHelperRuleEditor(rule, index);
+    }).join("");
+}
+
+function cpqbRenderHelperRuleEditor(rule, index)
+{
+    return `
+        <div
+            class="cpqb-helper-rule"
+            data-helper-rule-index="${index}"
+            style="border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:10px;"
+        >
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <strong>Helper Rule ${index + 1}</strong>
+
+                <button
+                    type="button"
+                    class="login-button cpqb-remove-helper-rule"
+                    data-helper-rule-index="${index}"
+                    style="width:auto;background:#c62828;"
+                >
+                    Remove
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>When</label>
+                <input
+                    class="tool-input cpqb-helper-rule-when"
+                    placeholder="example: existingDrawings=EPLAN"
+                    value="${cpqbEscapeHtml(cpqbConditionObjectToText(rule.when || {}))}"
+                >
+                <div class="status">
+                    Use questionId=value or questionId=value1|value2.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Set Parent Value</label>
+                <input class="tool-input cpqb-helper-rule-parent-value" value="${cpqbEscapeHtml(rule.setParentValue || rule.value || "")}">
+            </div>
+
+            <div class="form-group">
+                <label>Message</label>
+                <textarea class="tool-input cpqb-helper-rule-message" rows="2">${cpqbEscapeHtml(rule.message || "")}</textarea>
+            </div>
+        </div>
+    `;
+}
+
+function cpqbReadHelperQuestions(dialog)
+{
+    return [...dialog.querySelectorAll(".cpqb-helper-question")].map(function (row)
+    {
+        return {
+            id: row.querySelector(".cpqb-helper-question-id").value.trim(),
+            label: row.querySelector(".cpqb-helper-question-label").value.trim(),
+            type: row.querySelector(".cpqb-helper-question-type").value,
+            options: row.querySelector(".cpqb-helper-question-options").value
+                .split(/\n/)
+                .map(function (item)
+                {
+                    return item.trim();
+                })
+                .filter(Boolean),
+            visibleWhen: row.querySelector(".cpqb-helper-question-visible-when").value.trim(),
+            helpText: row.querySelector(".cpqb-helper-question-help-text").value.trim()
+        };
+    }).filter(function (question)
+    {
+        return question.id && question.label;
+    });
+}
+
+function cpqbReadHelperRules(dialog)
+{
+    return [...dialog.querySelectorAll(".cpqb-helper-rule")].map(function (row)
+    {
+        return {
+            when: cpqbConditionTextToObject(row.querySelector(".cpqb-helper-rule-when").value),
+            setParentValue: row.querySelector(".cpqb-helper-rule-parent-value").value.trim(),
+            message: row.querySelector(".cpqb-helper-rule-message").value.trim()
+        };
+    }).filter(function (rule)
+    {
+        return Object.keys(rule.when).length && rule.setParentValue;
+    });
+}
+
+function cpqbConditionTextToObject(value)
+{
+    const text = String(value || "").trim();
+
+    if (!text)
+    {
+        return {};
+    }
+
+    const parts = text.split("=");
+    const key = String(parts[0] || "").trim();
+    const conditionValue = String(parts.slice(1).join("=") || "").trim();
+
+    if (!key || !conditionValue)
+    {
+        return {};
+    }
+
+    const result = {};
+    result[key] = conditionValue;
+    return result;
+}
+
+function cpqbConditionObjectToText(condition)
+{
+    const keys = Object.keys(condition || {});
+
+    if (!keys.length)
+    {
+        return "";
+    }
+
+    const key = keys[0];
+
+    return key + "=" + condition[key];
 }
 
 function cpqbDefaultHelper()
@@ -780,6 +1049,8 @@ function cpqbShowDialog(title, bodyHtml, onSave)
 		});
 	}
 
+	cpqbWireHelperEditor(overlay);
+
     overlay.querySelector("#cpqbDialogCancel").addEventListener("click", function ()
     {
         document.body.removeChild(overlay);
@@ -800,6 +1071,144 @@ function cpqbShowDialog(title, bodyHtml, onSave)
         {
             console.error("Dialog save error:", err);
         }
+    });
+}
+
+function cpqbWireHelperEditor(overlay)
+{
+    function refreshHelperQuestions()
+    {
+        const existingQuestions = cpqbReadHelperQuestions(overlay);
+        const container = overlay.querySelector("#cpqbHelperQuestions");
+
+        container.innerHTML = cpqbRenderHelperQuestions(existingQuestions);
+        cpqbWireHelperEditor(overlay);
+    }
+
+    function refreshHelperRules()
+    {
+        const existingRules = cpqbReadHelperRules(overlay);
+        const container = overlay.querySelector("#cpqbHelperRules");
+
+        container.innerHTML = cpqbRenderHelperRules(existingRules);
+        cpqbWireHelperEditor(overlay);
+    }
+
+    const addHelperQuestionButton = overlay.querySelector("#cpqbAddHelperQuestionBtn");
+
+    if (addHelperQuestionButton && !addHelperQuestionButton.dataset.wired)
+    {
+        addHelperQuestionButton.dataset.wired = "true";
+
+        addHelperQuestionButton.addEventListener("click", function ()
+        {
+            const existingQuestions = cpqbReadHelperQuestions(overlay);
+
+            existingQuestions.push({
+                id: "",
+                label: "",
+                type: "text",
+                options: [],
+                visibleWhen: "",
+                helpText: ""
+            });
+
+            overlay.querySelector("#cpqbHelperQuestions").innerHTML =
+                cpqbRenderHelperQuestions(existingQuestions);
+
+            cpqbWireHelperEditor(overlay);
+        });
+    }
+
+    const addHelperRuleButton = overlay.querySelector("#cpqbAddHelperRuleBtn");
+
+    if (addHelperRuleButton && !addHelperRuleButton.dataset.wired)
+    {
+        addHelperRuleButton.dataset.wired = "true";
+
+        addHelperRuleButton.addEventListener("click", function ()
+        {
+            const existingRules = cpqbReadHelperRules(overlay);
+
+            existingRules.push({
+                when: {},
+                setParentValue: "",
+                message: ""
+            });
+
+            overlay.querySelector("#cpqbHelperRules").innerHTML =
+                cpqbRenderHelperRules(existingRules);
+
+            cpqbWireHelperEditor(overlay);
+        });
+    }
+
+    overlay.querySelectorAll(".cpqb-remove-helper-question").forEach(function (button)
+    {
+        if (button.dataset.wired)
+        {
+            return;
+        }
+
+        button.dataset.wired = "true";
+
+        button.addEventListener("click", function ()
+        {
+            const removeIndex = Number(button.dataset.helperQuestionIndex);
+            const questions = cpqbReadHelperQuestions(overlay);
+
+            questions.splice(removeIndex, 1);
+
+            overlay.querySelector("#cpqbHelperQuestions").innerHTML =
+                cpqbRenderHelperQuestions(questions);
+
+            cpqbWireHelperEditor(overlay);
+        });
+    });
+
+    overlay.querySelectorAll(".cpqb-remove-helper-rule").forEach(function (button)
+    {
+        if (button.dataset.wired)
+        {
+            return;
+        }
+
+        button.dataset.wired = "true";
+
+        button.addEventListener("click", function ()
+        {
+            const removeIndex = Number(button.dataset.helperRuleIndex);
+            const rules = cpqbReadHelperRules(overlay);
+
+            rules.splice(removeIndex, 1);
+
+            overlay.querySelector("#cpqbHelperRules").innerHTML =
+                cpqbRenderHelperRules(rules);
+
+            cpqbWireHelperEditor(overlay);
+        });
+    });
+
+    overlay.querySelectorAll(".cpqb-helper-question-type").forEach(function (select)
+    {
+        if (select.dataset.wired)
+        {
+            return;
+        }
+
+        select.dataset.wired = "true";
+
+        select.addEventListener("change", function ()
+        {
+            const row = select.closest(".cpqb-helper-question");
+            const optionsWrap = row.querySelector(".cpqb-helper-question-options-wrap");
+
+            const shouldShow =
+                select.value === "select" ||
+                select.value === "multiselect";
+
+            optionsWrap.style.display = shouldShow ? "" : "none";
+        });
     });
 }
 
