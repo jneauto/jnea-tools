@@ -238,33 +238,30 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
             return;
         }
 
-        if (
-            !Array.isArray(question.reports) ||
-            !question.reports.includes(reportType)
-        )
+        const isOutput = question.type === "output";
+
+        const isReportQuestion =
+            Array.isArray(question.reports) &&
+            question.reports.includes(reportType);
+
+        if (!isOutput && !isReportQuestion)
         {
             return;
         }
 
-        if (question.type === "output")
+        if (isOutput)
         {
-            const outputValue =
-                answers[question.id] ||
-                question.defaultValue ||
-                question.output ||
-                question.message ||
-                question.helpText ||
-                question.helptext ||
-                "";
-
-            if (cperIsEmpty(outputValue))
-            {
-                return;
-            }
-
             outputNotes.push({
                 label: question.label || question.id,
-                value: outputValue
+                value:
+                    answers[question.id] ||
+                    question.defaultValue ||
+                    question.output ||
+                    question.message ||
+                    question.helpText ||
+                    question.helptext ||
+                    question.label ||
+                    ""
             });
 
             return;
@@ -315,10 +312,6 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
                             <strong>
                                 ${cperEscapeHtml(note.label)}
                             </strong>
-
-                            <div style="margin-top:6px;">
-                                ${cperEscapeHtml(cperFormatAnswer(note.value))}
-                            </div>
                         </div>
                     `;
                 }).join("")}
