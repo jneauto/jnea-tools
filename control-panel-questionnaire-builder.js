@@ -1849,13 +1849,20 @@ function cpqbShowSectionTestDialog(section)
                 cpqbSetTestAnswer(input, answers);
             });
 
-            input.addEventListener("change", function ()
-            {
-                cpqbSetTestAnswer(input, answers);
-
-                document.body.removeChild(latestOverlay);
-                renderSectionTest();
-            });
+			input.addEventListener("change", function ()
+			{
+			    cpqbSetTestAnswer(input, answers);
+			
+			    if (
+			        input.tagName === "SELECT" ||
+			        input.type === "checkbox" ||
+			        input.type === "radio"
+			    )
+			    {
+			        document.body.removeChild(latestOverlay);
+			        renderSectionTest();
+			    }
+			});
         });
 
         latestOverlay.querySelectorAll("[data-cpqb-test-helper]").forEach(function (button)
