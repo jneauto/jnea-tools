@@ -1559,9 +1559,105 @@ function cpqbShowHelperTestDialog(parentQuestion, parentAnswers, helperAnswers)
 
 function cpqbRenderTestQuestionForHelper(question, answers)
 {
-    return cpqbRenderTestQuestion(question, answers)
-        .replaceAll("data-cpqb-test-question", "data-cpqb-test-helper-question")
-        .replaceAll("data-cpqb-test-helper", "data-cpqb-test-helper-unused");
+    const value = answers[question.id] ?? question.defaultValue ?? "";
+    const requiredLabel = question.required ? `<span style="color:#c62828;"> *</span>` : "";
+
+    let inputHtml = "";
+
+    if (question.type === "textarea")
+    {
+        inputHtml = `
+            <textarea class="tool-input" rows="4" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">${cpqbEscapeHtml(value)}</textarea>
+        `;
+    }
+    else if (question.type === "number")
+    {
+        inputHtml = `
+            <input class="tool-input" type="number" step="any" value="${cpqbEscapeHtml(value)}" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
+        `;
+    }
+    else if (question.type === "yesno")
+    {
+        inputHtml = `
+            <select class="tool-select" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
+                <option value="">Select...</option>
+                <option value="Yes" ${String(value) === "Yes" ? "selected" : ""}>Yes</option>
+                <option value="No" ${String(value) === "No" ? "selected" : ""}>No</option>
+                <option value="Unknown" ${String(value) === "Unknown" ? "selected" : ""}>Unknown</option>
+            </select>
+        `;
+    }
+    else if (question.type === "select")
+    {
+        inputHtml = `
+            <select class="tool-select" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
+                <option value="">Select...</option>
+                ${(question.options || []).map(function (option)
+                {
+                    return `
+                        <option value="${cpqbEscapeHtml(option)}" ${String(value) === String(option) ? "selected" : ""}>
+                            ${cpqbEscapeHtml(option)}
+                        </option>
+                    `;
+                }).join("")}
+            </select>
+        `;
+    }
+    else if (question.type === "multiselect")
+    {
+        const values = Array.isArray(value) ? value : [];
+
+        inputHtml = `
+            <div style="display:grid;gap:8px;">
+                ${(question.options || []).map(function (option)
+                {
+                    return `
+                        <label style="display:flex;gap:8px;align-items:center;">
+                            <input
+                                type="checkbox"
+                                value="${cpqbEscapeHtml(option)}"
+                                data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}"
+                                ${values.includes(option) ? "checked" : ""}
+                            >
+                            ${cpqbEscapeHtml(option)}
+                        </label>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    }
+    else if (question.type === "output")
+    {
+        inputHtml = `
+            <div class="status">
+                ${cpqbEscapeHtml(question.defaultValue || question.helpText || "Output text will display here.")}
+            </div>
+        `;
+    }
+    else
+    {
+        inputHtml = `
+            <input class="tool-input" type="text" value="${cpqbEscapeHtml(value)}" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
+        `;
+    }
+
+    return `
+        <div class="form-group">
+            <label>
+                ${cpqbEscapeHtml(question.label || question.id)}
+                ${requiredLabel}
+                ${question.unit ? ` (${cpqbEscapeHtml(question.unit)})` : ""}
+            </label>
+
+            ${inputHtml}
+
+            ${question.helpText || question.helptext ? `
+                <div class="status">
+                    ${cpqbEscapeHtml(question.helpText || question.helptext)}
+                </div>
+            ` : ""}
+        </div>
+    `;
 }
 
 function cpqbSetTestAnswer(input, answers, dataName)
