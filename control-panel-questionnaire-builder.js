@@ -1010,9 +1010,13 @@ function cpqbShowDialog(title, bodyHtml, onSave)
                     Cancel
                 </button>
 
-                <button id="cpqbDialogSave" class="login-button" type="button" style="width:auto;">
-                    Save
-                </button>
+				<button id="cpqbDialogTest" class="login-button" type="button" style="width:auto;background:#64748b;">
+				    Test Question
+				</button>
+				
+				<button id="cpqbDialogSave" class="login-button" type="button" style="width:auto;">
+				    Save
+				</button>
             </div>
         </div>
     `;
@@ -1055,6 +1059,25 @@ function cpqbShowDialog(title, bodyHtml, onSave)
     {
         document.body.removeChild(overlay);
     });
+
+	const testButton = overlay.querySelector("#cpqbDialogTest");
+	
+	if (testButton)
+	{
+	    testButton.addEventListener("click", function ()
+	    {
+	        try
+	        {
+	            const question = cpqbReadQuestionDialog(overlay);
+	            cpqbShowQuestionTestDialog(question);
+	        }
+	        catch (err)
+	        {
+	            console.error("Question test error:", err);
+	            alert("Could not test question: " + err.message);
+	        }
+	    });
+	}	
 
     overlay.querySelector("#cpqbDialogSave").addEventListener("click", function ()
     {
@@ -1234,4 +1257,406 @@ function cpqbEscapeHtml(value)
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function cpqbShowQuestionTestDialog(question)
+{
+    const testAnswers = {};
+    const helperAnswers = {};
+
+    function renderTest()
+    {
+        const visible = cpqbQuestionVisibleForTest(question, testAnswers);
+
+        cpqbShowDialog("Test Question", `
+            <div class="status" style="margin-bottom:12px;">
+                This test uses the unsaved settings from the editor.
+            </div>
+
+            <div style="border:1px solid #ddd;border-radius:12px;padding:14px;margin-bottom:14px;">
+                <h3 style="margin-top:0;">Test Context</h3>
+
+                <div class="form-group">
+                    <label>Visible When Test Answers</label>
+                    <textarea
+                        id="cpqbTestAnswersJson"
+                        class="tool-input"
+                        rows="5"
+                    >${cpqbEscapeHtml(JSON.stringify(testAnswers, null, 2))}</textarea>
+
+                    <div class="status">
+                        Enter JSON values for referenced questions. Example: { "hasCustomerStandard": "Yes" }
+                    </div>
+                </div>
+
+                <button id="cpqbRefreshQuestionTestBtn" class="login-button" type="button" style="width:auto;">
+                    Refresh Test
+                </button>
+            </div>
+
+            <div style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <h3 style="margin-top:0;">Question Preview</h3>
+
+                ${
+                    visible
+                        ? cpqbRenderTestQuestion(question, testAnswers)
+                        : `
+                            <div style="color:#c62828;font-weight:bold;">
+                                This question is currently hidden by visibleWhen.
+                            </div>
+                        `
+                }
+            </div>
+
+            <div id="cpqbTestResultArea" style="margin-top:14px;"></div>
+        `, function ()
+        {
+            return true;
+        });
+
+        const latestOverlay = document.body.lastElementChild;
+
+        latestOverlay.querySelector("#cpqbRefreshQuestionTestBtn").addEventListener("click", function ()
+        {
+            try
+            {
+                const parsed = JSON.parse(latestOverlay.querySelector("#cpqbTestAnswersJson").value || "{}");
+
+                Object.keys(testAnswers).forEach(function (key)
+                {
+                    delete testAnswers[key];
+                });
+
+                Object.assign(testAnswers, parsed);
+
+                document.body.removeChild(latestOverlay);
+                renderTest();
+            }
+            catch (err)
+            {
+                alert("Test answers JSON is invalid: " + err.message);
+            }
+        });
+
+        latestOverlay.querySelectorAll("[data-cpqb-test-question]").forEach(function (input)
+        {
+            input.addEventListener("input", function ()
+            {
+                cpqbSetTestAnswer(input, testAnswers);
+            });
+
+            input.addEventListener("change", function ()
+            {
+                cpqbSetTestAnswer(input, testAnswers);
+            });
+        });
+
+        latestOverlay.querySelectorAll("[data-cpqb-test-helper]").forEach(function (button)
+        {
+            button.addEventListener("click", function ()
+            {
+                cpqbShowHelperTestDialog(question, testAnswers, helperAnswers);
+            });
+        });
+    }
+
+    renderTest();
+}
+
+function cpqbRenderTestQuestion(question, answers)
+{
+    const value = answers[question.id] ?? question.defaultValue ?? "";
+    const requiredLabel = question.required ? `<span style="color:#c62828;"> *</span>` : "";
+
+    let inputHtml = "";
+
+    if (question.type === "textarea")
+    {
+        inputHtml = `
+            <textarea class="tool-input" rows="4" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">${cpqbEscapeHtml(value)}</textarea>
+        `;
+    }
+    else if (question.type === "number")
+    {
+        inputHtml = `
+            <input class="tool-input" type="number" step="any" value="${cpqbEscapeHtml(value)}" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+        `;
+    }
+    else if (question.type === "yesno")
+    {
+        inputHtml = `
+            <select class="tool-select" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+                <option value="">Select...</option>
+                <option value="Yes" ${String(value) === "Yes" ? "selected" : ""}>Yes</option>
+                <option value="No" ${String(value) === "No" ? "selected" : ""}>No</option>
+                <option value="Unknown" ${String(value) === "Unknown" ? "selected" : ""}>Unknown</option>
+            </select>
+        `;
+    }
+    else if (question.type === "select")
+    {
+        inputHtml = `
+            <select class="tool-select" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+                <option value="">Select...</option>
+                ${(question.options || []).map(function (option)
+                {
+                    return `
+                        <option value="${cpqbEscapeHtml(option)}" ${String(value) === String(option) ? "selected" : ""}>
+                            ${cpqbEscapeHtml(option)}
+                        </option>
+                    `;
+                }).join("")}
+            </select>
+        `;
+    }
+    else if (question.type === "multiselect")
+    {
+        const values = Array.isArray(value) ? value : [];
+
+        inputHtml = `
+            <div style="display:grid;gap:8px;">
+                ${(question.options || []).map(function (option)
+                {
+                    return `
+                        <label style="display:flex;gap:8px;align-items:center;">
+                            <input
+                                type="checkbox"
+                                value="${cpqbEscapeHtml(option)}"
+                                data-cpqb-test-question="${cpqbEscapeHtml(question.id)}"
+                                ${values.includes(option) ? "checked" : ""}
+                            >
+                            ${cpqbEscapeHtml(option)}
+                        </label>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    }
+    else if (question.type === "output")
+    {
+        inputHtml = `
+            <div class="status">
+                ${cpqbEscapeHtml(question.defaultValue || question.helpText || "Output text will display here.")}
+            </div>
+        `;
+    }
+    else
+    {
+        inputHtml = `
+            <input class="tool-input" type="text" value="${cpqbEscapeHtml(value)}" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+        `;
+    }
+
+    return `
+        <div class="form-group">
+            <label>
+                ${cpqbEscapeHtml(question.label || question.id)}
+                ${requiredLabel}
+                ${question.unit ? ` (${cpqbEscapeHtml(question.unit)})` : ""}
+            </label>
+
+            ${inputHtml}
+
+            ${question.helpText ? `
+                <div class="status">
+                    ${cpqbEscapeHtml(question.helpText)}
+                </div>
+            ` : ""}
+
+            ${question.helper ? `
+                <button
+                    type="button"
+                    class="login-button"
+                    data-cpqb-test-helper="${cpqbEscapeHtml(question.id)}"
+                    style="width:auto;margin-top:8px;background:#64748b;"
+                >
+                    ${cpqbEscapeHtml(question.helper.buttonLabel || "Help me decide")}
+                </button>
+            ` : ""}
+        </div>
+    `;
+}
+
+function cpqbShowHelperTestDialog(parentQuestion, parentAnswers, helperAnswers)
+{
+    const helper = parentQuestion.helper || {};
+    const questions = helper.questions || [];
+    const rules = helper.rules || [];
+    const subAnswers = helperAnswers[parentQuestion.id] || {};
+
+    cpqbShowDialog(helper.title || "Test Help Me Decide", `
+        <div class="status" style="margin-bottom:12px;">
+            Test the helper sub-questions and recommendation rules.
+        </div>
+
+        ${questions.map(function (question)
+        {
+            if (!cpqbQuestionVisibleForTest(question, subAnswers))
+            {
+                return "";
+            }
+
+            return cpqbRenderTestQuestionForHelper(question, subAnswers);
+        }).join("")}
+
+        <button id="cpqbEvaluateHelperTestBtn" class="login-button" type="button" style="width:auto;">
+            Evaluate Helper Rules
+        </button>
+
+        <div id="cpqbHelperTestResult" style="margin-top:14px;"></div>
+    `, function ()
+    {
+        return true;
+    });
+
+    const latestOverlay = document.body.lastElementChild;
+
+    latestOverlay.querySelectorAll("[data-cpqb-test-helper-question]").forEach(function (input)
+    {
+        input.addEventListener("input", function ()
+        {
+            cpqbSetTestAnswer(input, subAnswers, "cpqbTestHelperQuestion");
+        });
+
+        input.addEventListener("change", function ()
+        {
+            cpqbSetTestAnswer(input, subAnswers, "cpqbTestHelperQuestion");
+        });
+    });
+
+    latestOverlay.querySelector("#cpqbEvaluateHelperTestBtn").addEventListener("click", function ()
+    {
+        helperAnswers[parentQuestion.id] = subAnswers;
+
+        const result = cpqbEvaluateHelperForTest(rules, subAnswers);
+        const resultArea = latestOverlay.querySelector("#cpqbHelperTestResult");
+
+        if (!result.recommendedValue)
+        {
+            resultArea.innerHTML = `
+                <div style="color:#c62828;font-weight:bold;">
+                    No helper rule matched.
+                </div>
+            `;
+
+            return;
+        }
+
+        resultArea.innerHTML = `
+            <div class="card" style="box-shadow:none;border-left:5px solid #0193cf;">
+                <strong>Recommended Parent Answer:</strong>
+                ${cpqbEscapeHtml(result.recommendedValue)}
+
+                ${result.message ? `
+                    <div class="status" style="margin-top:8px;">
+                        ${cpqbEscapeHtml(result.message)}
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    });
+}
+
+function cpqbRenderTestQuestionForHelper(question, answers)
+{
+    return cpqbRenderTestQuestion(question, answers)
+        .replaceAll("data-cpqb-test-question", "data-cpqb-test-helper-question")
+        .replaceAll("data-cpqb-test-helper", "data-cpqb-test-helper-unused");
+}
+
+function cpqbSetTestAnswer(input, answers, dataName)
+{
+    const key = dataName || "cpqbTestQuestion";
+    const questionId = input.dataset[key];
+
+    if (!questionId)
+    {
+        return;
+    }
+
+    if (input.type === "checkbox")
+    {
+        const selector = `[data-${cpqbKebabCase(key)}="${CSS.escape(questionId)}"]`;
+        const values = [];
+
+        document.querySelectorAll(selector).forEach(function (checkbox)
+        {
+            if (checkbox.checked)
+            {
+                values.push(checkbox.value);
+            }
+        });
+
+        answers[questionId] = values;
+        return;
+    }
+
+    answers[questionId] = input.value;
+}
+
+function cpqbQuestionVisibleForTest(question, answers)
+{
+    const visibleWhen = question.visibleWhen || question.visiblewhen;
+
+    if (!visibleWhen)
+    {
+        return true;
+    }
+
+    const parts = String(visibleWhen).split("=");
+    const questionId = String(parts[0] || "").trim();
+    const allowedRaw = String(parts.slice(1).join("=") || "").trim();
+
+    if (!questionId || !allowedRaw)
+    {
+        return true;
+    }
+
+    const allowedValues = allowedRaw
+        .split("|")
+        .map(cpqbNormalize);
+
+    return allowedValues.includes(cpqbNormalize(answers[questionId]));
+}
+
+function cpqbEvaluateHelperForTest(rules, answers)
+{
+    for (const rule of rules || [])
+    {
+        const condition = rule.when || {};
+
+        const matches = Object.keys(condition).every(function (key)
+        {
+            const allowedValues = String(condition[key])
+                .split("|")
+                .map(cpqbNormalize);
+
+            return allowedValues.includes(cpqbNormalize(answers[key]));
+        });
+
+        if (matches)
+        {
+            return {
+                recommendedValue: rule.setParentValue || rule.value || "",
+                message: rule.message || ""
+            };
+        }
+    }
+
+    return {
+        recommendedValue: "",
+        message: ""
+    };
+}
+
+function cpqbNormalize(value)
+{
+    return String(value || "").trim().toUpperCase();
+}
+
+function cpqbKebabCase(value)
+{
+    return String(value || "")
+        .replace(/([a-z])([A-Z])/g, "$1-$2")
+        .toLowerCase();
 }
