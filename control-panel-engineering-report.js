@@ -238,11 +238,6 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
             return;
         }
 
-        if (cperIsEmpty(answers[question.id]))
-        {
-            return;
-        }
-
         if (
             !Array.isArray(question.reports) ||
             !question.reports.includes(reportType)
@@ -253,11 +248,30 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
 
         if (question.type === "output")
         {
+            const outputValue =
+                answers[question.id] ||
+                question.defaultValue ||
+                question.output ||
+                question.message ||
+                question.helpText ||
+                question.helptext ||
+                "";
+
+            if (cperIsEmpty(outputValue))
+            {
+                return;
+            }
+
             outputNotes.push({
                 label: question.label || question.id,
-                value: answers[question.id]
+                value: outputValue
             });
 
+            return;
+        }
+
+        if (cperIsEmpty(answers[question.id]))
+        {
             return;
         }
 
@@ -297,12 +311,7 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
                 ${outputNotes.map(function (note)
                 {
                     return `
-                        <div
-                            style="
-                                border-bottom:1px solid #f3d08a;
-                                padding:10px 0;
-                            "
-                        >
+                        <div style="border-bottom:1px solid #f3d08a;padding:10px 0;">
                             <strong>
                                 ${cperEscapeHtml(note.label)}
                             </strong>
