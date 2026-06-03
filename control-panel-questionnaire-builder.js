@@ -406,6 +406,17 @@ document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
 
 function cpqbRenderSection(section, sectionIndex)
 {
+	const allComplete =
+	    questions.length > 0 &&
+	    questions.every(function (question)
+	    {
+	        return question.complete === true;
+	    });
+	
+	const sectionCompleteIcon = allComplete
+	    ? `<span style="color:#2e7d32;font-size:28px;font-weight:bold;">✓</span>`
+	    : "";
+	
     const questions = Array.isArray(section.questions) ? section.questions : [];
 
     return `
@@ -416,9 +427,10 @@ function cpqbRenderSection(section, sectionIndex)
 			>
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                 <div>
-                    <h3 style="margin-top:0;margin-bottom:4px;">
-                        ${cpqbEscapeHtml(section.label || "Untitled Section")}
-                    </h3>
+					<h3 style="margin-top:0;margin-bottom:4px;display:flex;gap:10px;align-items:center;">
+					    ${sectionCompleteIcon}
+					    <span>${cpqbEscapeHtml(section.label || "Untitled Section")}</span>
+					</h3>
 
                     <div class="status">
                         ID: ${cpqbEscapeHtml(section.id || "")} | Questions: ${questions.length}
@@ -463,6 +475,10 @@ function cpqbRenderSection(section, sectionIndex)
 
 function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 {
+	const completeIcon = question.complete
+    ? `<span style="color:#2e7d32;font-size:20px;font-weight:bold;">✓</span>`
+    : `<span style="color:#bbb;font-size:20px;">○</span>`;
+	
     return `
 			<div
 			    class="cpqb-question-row"
@@ -479,7 +495,10 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
         >
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                 <div>
-                    <strong>${cpqbEscapeHtml(question.label || "Untitled Question")}</strong>
+					<span style="display:flex;gap:8px;align-items:center;">
+					    ${completeIcon}
+					    <strong>${cpqbEscapeHtml(question.label || "Untitled Question")}</strong>
+					</span>
 
                     <div class="status">
                         ID: ${cpqbEscapeHtml(question.id || "")}
@@ -538,6 +557,7 @@ function cpqbNewQuestion()
         helpText: "",
         options: [],
         reports: [],
+		complete: false,
         visibleWhen: "",
         helper: null
     };
@@ -578,6 +598,11 @@ function cpqbRenderQuestionDialog(question)
                         <input id="cpqbQuestionRequired" type="checkbox" ${question.required ? "checked" : ""}>
                         Required
                     </label>
+
+					<label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;font-weight:bold;color:#2e7d32;">
+					    <input id="cpqbQuestionComplete" type="checkbox" ${question.complete ? "checked" : ""}>
+					    Complete / Commissioned
+					</label>					
                 </div>
             </div>
 
@@ -722,6 +747,7 @@ function cpqbReadQuestionDialog(dialog)
             })
             .filter(Boolean),
         visibleWhen: dialog.querySelector("#cpqbQuestionVisibleWhen").value.trim(),
+		complete: dialog.querySelector("#cpqbQuestionComplete").checked,
         reports: reports,
         helper: helper
     };
