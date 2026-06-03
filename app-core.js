@@ -235,6 +235,10 @@
             Control Panel Questionnaire
           </button>
 
+          <button class="nav-button" id="navCpe">
+            Control Panel Designer's Guide
+          </button>
+
         ${
           currentProfile &&
           currentProfile.is_admin
@@ -282,6 +286,7 @@
     document.getElementById("navTerminalSelector").addEventListener("click", renderTerminalSelectorTool);
     document.getElementById("navKnowledge").addEventListener("click", renderKnowledgePlaceholder);
     document.getElementById("navAnalogScale").addEventListener("click", renderAnalogScaleTool);
+    document.getElementById("navCpe").addEventListener("click", renderControlPanelEngineeringReportPlaceholder);
     const cpqBuilderButton = document.getElementById("navCpqBuilder");
     document
       .getElementById("navCpq")
