@@ -406,6 +406,8 @@ document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
 
 function cpqbRenderSection(section, sectionIndex)
 {
+    const questions = Array.isArray(section.questions) ? section.questions : [];
+
 	const allComplete =
 	    questions.length > 0 &&
 	    questions.every(function (question)
@@ -417,8 +419,6 @@ function cpqbRenderSection(section, sectionIndex)
 	    ? `<span style="color:#2e7d32;font-size:28px;font-weight:bold;">✓</span>`
 	    : "";
 	
-    const questions = Array.isArray(section.questions) ? section.questions : [];
-
     return `
 			<div
 			    class="card"
