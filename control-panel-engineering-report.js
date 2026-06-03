@@ -228,30 +228,96 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
 {
     const questions = Array.isArray(section.questions) ? section.questions : [];
 
-    const rows = questions
-        .filter(function (question)
+    const normalRows = [];
+    const outputNotes = [];
+
+    questions.forEach(function (question)
+    {
+        if (!cperQuestionIsVisible(question, answers))
         {
-            if (!cperQuestionIsVisible(question, answers))
-            {
-                return false;
-            }
+            return;
+        }
 
-            if (cperIsEmpty(answers[question.id]))
-            {
-                return false;
-            }
-
-            return Array.isArray(question.reports) && question.reports.includes(reportType);
-        })
-        .map(function (question)
+        if (cperIsEmpty(answers[question.id]))
         {
-            return [
-                question.label || question.id,
-                cperFormatAnswer(answers[question.id])
-            ];
-        });
+            return;
+        }
 
-    return cperRenderSection(section.label || section.id || "Section", rows);
+        if (
+            !Array.isArray(question.reports) ||
+            !question.reports.includes(reportType)
+        )
+        {
+            return;
+        }
+
+        if (question.type === "output")
+        {
+            outputNotes.push({
+                label: question.label || question.id,
+                value: answers[question.id]
+            });
+
+            return;
+        }
+
+        normalRows.push([
+            question.label || question.id,
+            cperFormatAnswer(answers[question.id])
+        ]);
+    });
+
+    let html = "";
+
+    if (normalRows.length)
+    {
+        html += cperRenderSection(
+            section.label || section.id || "Section",
+            normalRows
+        );
+    }
+
+    if (outputNotes.length)
+    {
+        html += `
+            <div
+                class="card"
+                style="
+                    box-shadow:none;
+                    border:1px solid #f59e0b;
+                    border-left:5px solid #f59e0b;
+                    margin-bottom:18px;
+                    background:#fffbeb;
+                "
+            >
+                <h3 style="margin-top:0;">
+                    ${cperEscapeHtml(section.label || section.id || "Section")} - Engineering Notes
+                </h3>
+
+                ${outputNotes.map(function (note)
+                {
+                    return `
+                        <div
+                            style="
+                                border-bottom:1px solid #f3d08a;
+                                padding:10px 0;
+                            "
+                        >
+                            <strong>
+                                ${cperEscapeHtml(note.label)}
+                            </strong>
+
+                            <div style="margin-top:6px;">
+                                ${cperEscapeHtml(cperFormatAnswer(note.value))}
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    }
+
+    return html;
 }
 
 function cperRenderSection(title, rows)
