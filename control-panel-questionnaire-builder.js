@@ -1316,7 +1316,7 @@ function cpqbShowQuestionTestDialog(question)
 
     function renderTest()
     {
-        const visible = cpqbQuestionVisibleForTest(question, testAnswers);
+        const visible = true; //cpqbQuestionVisibleForTest(question, testAnswers);
 
         cpqbShowDialog("Test Question", `
             <div class="status" style="margin-bottom:12px;">
