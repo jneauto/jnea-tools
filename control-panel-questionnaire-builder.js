@@ -129,6 +129,14 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
             });
         });
 
+		document.querySelectorAll("[data-cpqb-test-section]").forEach(function (button)
+		{
+		    button.addEventListener("click", function ()
+		    {
+		        testSection(Number(button.dataset.cpqbTestSection));
+		    });
+		});
+
         document.querySelectorAll("[data-cpqb-delete-section]").forEach(function (button)
         {
             button.addEventListener("click", function ()
@@ -303,6 +311,13 @@ document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
         render();
     }
 
+	function testSection(sectionIndex)
+	{
+		const section = questionnaire.sections[sectionIndex];
+	
+		cpqbShowSectionTestDialog(section);
+	}		
+
 	function handleDrop(from, to)
 	{
 	    if (from.type === "section")
@@ -449,6 +464,15 @@ function cpqbRenderSection(section, sectionIndex)
 					    Drag Section
 					</button>
 
+					<button
+					    class="login-button"
+					    type="button"
+					    style="width:auto;background:#64748b;"
+					    data-cpqb-test-section="${sectionIndex}"
+					>
+					    Test Section
+					</button>					
+					
                     <button class="login-button" type="button" style="width:auto;" data-cpqb-add-question="${sectionIndex}">
                         Add Question
                     </button>
@@ -1781,4 +1805,76 @@ function cpqbKebabCase(value)
     return String(value || "")
         .replace(/([a-z])([A-Z])/g, "$1-$2")
         .toLowerCase();
+}
+
+function cpqbShowSectionTestDialog(section)
+{
+    const answers = {};
+
+    function renderSectionTest()
+    {
+        const questions = Array.isArray(section.questions) ? section.questions : [];
+
+        cpqbShowDialog("Test Section - " + (section.label || section.id || ""), `
+            <div class="status" style="margin-bottom:12px;">
+                This test uses the unsaved settings from the builder.
+            </div>
+
+            <div style="border:1px solid #ddd;border-radius:12px;padding:14px;">
+                <h3 style="margin-top:0;">
+                    ${cpqbEscapeHtml(section.label || section.id || "Section")}
+                </h3>
+
+                ${questions.map(function (question)
+                {
+                    if (!cpqbQuestionVisibleForTest(question, answers))
+                    {
+                        return "";
+                    }
+
+                    return cpqbRenderTestQuestion(question, answers);
+                }).join("")}
+            </div>
+        `, function ()
+        {
+            return true;
+        });
+
+        const latestOverlay = document.body.lastElementChild;
+
+        latestOverlay.querySelectorAll("[data-cpqb-test-question]").forEach(function (input)
+        {
+            input.addEventListener("input", function ()
+            {
+                cpqbSetTestAnswer(input, answers);
+            });
+
+            input.addEventListener("change", function ()
+            {
+                cpqbSetTestAnswer(input, answers);
+
+                document.body.removeChild(latestOverlay);
+                renderSectionTest();
+            });
+        });
+
+        latestOverlay.querySelectorAll("[data-cpqb-test-helper]").forEach(function (button)
+        {
+            button.addEventListener("click", function ()
+            {
+                const questionId = button.dataset.cpqbTestHelper;
+                const question = questions.find(function (candidate)
+                {
+                    return candidate.id === questionId;
+                });
+
+                if (question)
+                {
+                    cpqbShowHelperTestDialog(question, answers, {});
+                }
+            });
+        });
+    }
+
+    renderSectionTest();
 }
