@@ -15,6 +15,19 @@ async function renderControlPanelEngineeringReportPlaceholder()
 
     try
     {
+        const questionnaireResponse = await sb
+            .from("control_panel_questionnaires")
+            .select("*")
+            .eq("is_active", true)
+            .order("version", { ascending: false })
+            .limit(1)
+            .single();
+
+        if (questionnaireResponse.error)
+        {
+            throw questionnaireResponse.error;
+        }
+
         const projectsResponse = await sb
             .from("control_panel_projects")
             .select("*")
@@ -26,7 +39,10 @@ async function renderControlPanelEngineeringReportPlaceholder()
             throw projectsResponse.error;
         }
 
-        renderControlPanelEngineeringReportTool(projectsResponse.data || []);
+        renderControlPanelEngineeringReportTool(
+            questionnaireResponse.data,
+            projectsResponse.data || []
+        );
     }
     catch (err)
     {
@@ -37,7 +53,7 @@ async function renderControlPanelEngineeringReportPlaceholder()
                 <h2>Industrial Control Panel Engineering Report</h2>
 
                 <div style="color:#c62828;font-weight:bold;">
-                    Could not load saved projects.
+                    Could not load engineering report.
                 </div>
 
                 <pre>${cperEscapeHtml(err.message)}</pre>
@@ -46,8 +62,11 @@ async function renderControlPanelEngineeringReportPlaceholder()
     }
 }
 
-function renderControlPanelEngineeringReportTool(savedProjects)
+function renderControlPanelEngineeringReportTool(activeQuestionnaire, savedProjects)
 {
+    const questionnaire = cperClone(activeQuestionnaire.definition || {});
+    const sections = Array.isArray(questionnaire.sections) ? questionnaire.sections : [];
+
     let selectedProjectId = "";
     let currentProject = null;
     let answers = {};
@@ -61,8 +80,12 @@ function renderControlPanelEngineeringReportTool(savedProjects)
                 </h2>
 
                 <p>
-                    Select a saved questionnaire project to generate an engineering report.
+                    Select a saved questionnaire project to generate a section-based engineering report.
                 </p>
+
+                <div class="status" style="margin-bottom:14px;">
+                    <strong>Questionnaire Version:</strong> ${cperEscapeHtml(activeQuestionnaire.version || 1)}
+                </div>
 
                 <div class="card" style="box-shadow:none;border:1px solid #ddd;">
                     <h3 style="margin-top:0;">
@@ -140,60 +163,12 @@ function renderControlPanelEngineeringReportTool(savedProjects)
                     </div>
                 </div>
 
-                ${cperRenderSection("Project Summary", [
-                    ["Project Name", answers.projectName || currentProject.project_name],
-                    ["Customer Name", answers.customerName || currentProject.customer_name],
-                    ["Application", answers.application || answers.applicationType],
-                    ["Installation Location", answers.installationLocation],
-                    ["Environment", answers.environment],
-                    ["Notes", answers.projectNotes || answers.notes]
-                ])}
+                ${cperRenderProjectSummary()}
 
-                ${cperRenderSection("Electrical Requirements", [
-                    ["Supply Voltage", answers.supplyVoltage],
-                    ["Phase", answers.phase],
-                    ["Frequency", answers.frequency],
-                    ["Full Load Current", cperFormatWithUnit(answers.fullLoadCurrent, "A")],
-                    ["Short Circuit Current Rating Required", cperFormatWithUnit(answers.sccrRequired, "kA")],
-                    ["Main Disconnect Required", answers.mainDisconnectRequired],
-                    ["Control Voltage", answers.controlVoltage],
-                    ["Power Supply Required", answers.powerSupplyRequired],
-                    ["UPS Required", answers.upsRequired]
-                ])}
-
-                ${cperRenderSection("Panel Construction", [
-                    ["Enclosure Type", answers.enclosureType],
-                    ["Enclosure Rating", answers.enclosureRating],
-                    ["Enclosure Material", answers.enclosureMaterial],
-                    ["Mounting", answers.mountingType],
-                    ["Estimated Panel Size", answers.panelSize],
-                    ["Cooling Required", answers.coolingRequired],
-                    ["Heating Required", answers.heatingRequired],
-                    ["Lighting Required", answers.panelLightingRequired],
-                    ["Receptacle Required", answers.receptacleRequired]
-                ])}
-
-                ${cperRenderSection("Controls And Automation", [
-                    ["PLC Required", answers.plcRequired],
-                    ["PLC Platform", answers.plcPlatform],
-                    ["HMI Required", answers.hmiRequired],
-                    ["HMI Size", answers.hmiSize],
-                    ["Network Type", answers.networkType],
-                    ["Remote I/O Required", answers.remoteIoRequired],
-                    ["Safety PLC Required", answers.safetyPlcRequired],
-                    ["VFDs Required", answers.vfdsRequired],
-                    ["Servo Drives Required", answers.servoDrivesRequired]
-                ])}
-
-                ${cperRenderSection("Standards And Compliance", [
-                    ["Applicable Standard", answers.applicableStandard],
-                    ["UL 508A Required", answers.ul508aRequired],
-                    ["CSA Required", answers.csaRequired],
-                    ["CE Required", answers.ceRequired],
-                    ["Hazardous Location", answers.hazardousLocation],
-                    ["Arc Flash Label Required", answers.arcFlashLabelRequired],
-                    ["Nameplate Requirements", answers.nameplateRequirements]
-                ])}
+                ${sections.map(function (section)
+                {
+                    return cperRenderQuestionnaireSection(section, answers, "engineering");
+                }).join("")}
 
                 ${cperRenderOpenIssues()}
 
@@ -204,25 +179,38 @@ function renderControlPanelEngineeringReportTool(savedProjects)
         `;
     }
 
+    function cperRenderProjectSummary()
+    {
+        return cperRenderSection("Project Summary", [
+            ["Project Name", answers.projectName || currentProject.project_name],
+            ["Customer Name", answers.customerName || currentProject.customer_name]
+        ]);
+    }
+
     function cperRenderOpenIssues()
     {
         const issues = [];
 
-        Object.keys(answers).forEach(function (key)
+        sections.forEach(function (section)
         {
-            const value = answers[key];
+            const questions = Array.isArray(section.questions) ? section.questions : [];
 
-            if (
-                cperNormalize(value) === "UNKNOWN" ||
-                cperNormalize(value) === "TBD" ||
-                cperNormalize(value) === "TO BE DETERMINED"
-            )
+            questions.forEach(function (question)
             {
-                issues.push([
-                    cperLabelFromKey(key),
-                    value
-                ]);
-            }
+                const value = answers[question.id];
+
+                if (
+                    cperNormalize(value) === "UNKNOWN" ||
+                    cperNormalize(value) === "TBD" ||
+                    cperNormalize(value) === "TO BE DETERMINED"
+                )
+                {
+                    issues.push([
+                        question.label || question.id,
+                        value
+                    ]);
+                }
+            });
         });
 
         if (!issues.length)
@@ -234,6 +222,36 @@ function renderControlPanelEngineeringReportTool(savedProjects)
     }
 
     render();
+}
+
+function cperRenderQuestionnaireSection(section, answers, reportType)
+{
+    const questions = Array.isArray(section.questions) ? section.questions : [];
+
+    const rows = questions
+        .filter(function (question)
+        {
+            if (!cperQuestionIsVisible(question, answers))
+            {
+                return false;
+            }
+
+            if (cperIsEmpty(answers[question.id]))
+            {
+                return false;
+            }
+
+            return Array.isArray(question.reports) && question.reports.includes(reportType);
+        })
+        .map(function (question)
+        {
+            return [
+                question.label || question.id,
+                cperFormatAnswer(answers[question.id])
+            ];
+        });
+
+    return cperRenderSection(section.label || section.id || "Section", rows);
 }
 
 function cperRenderSection(title, rows)
@@ -272,14 +290,47 @@ function cperRenderSection(title, rows)
     `;
 }
 
-function cperFormatWithUnit(value, unit)
+function cperQuestionIsVisible(question, answers)
 {
-    if (cperIsEmpty(value))
+    if (!question.visibleWhen && !question.visiblewhen)
     {
-        return "";
+        return true;
     }
 
-    return `${value} ${unit}`;
+    const visibleWhen = question.visibleWhen || question.visiblewhen;
+
+    if (typeof visibleWhen === "object")
+    {
+        return cperObjectConditionMatches(visibleWhen, answers);
+    }
+
+    const parts = String(visibleWhen || "").split("=");
+    const questionId = String(parts[0] || "").trim();
+    const allowedValuesRaw = String(parts[1] || "").trim();
+
+    if (!questionId || !allowedValuesRaw)
+    {
+        return true;
+    }
+
+    const allowedValues = allowedValuesRaw
+        .split("|")
+        .map(cperNormalize);
+
+    return allowedValues.includes(cperNormalize(answers[questionId]));
+}
+
+function cperObjectConditionMatches(condition, answers)
+{
+    const questionId = condition.questionId || condition.id;
+    const value = condition.value;
+
+    if (!questionId)
+    {
+        return true;
+    }
+
+    return cperNormalize(answers[questionId]) === cperNormalize(value);
 }
 
 function cperFormatAnswer(value)
@@ -305,17 +356,6 @@ function cperIsEmpty(value)
     }
 
     return value === null || typeof value === "undefined" || String(value).trim() === "";
-}
-
-function cperLabelFromKey(value)
-{
-    return String(value || "")
-        .replace(/([a-z])([A-Z])/g, "$1 $2")
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, function (letter)
-        {
-            return letter.toUpperCase();
-        });
 }
 
 function cperClone(value)
