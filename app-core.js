@@ -333,7 +333,7 @@
           <li>Knowledge Files</li>
           <li>Terminal Block Selector</li>
           <li>Analog Scaling</li>
-          <li>Control Panel Design Aid</li>
+          <li>Control Panel Designer's Guide</li>
         </ul>
       </div>
     `;
