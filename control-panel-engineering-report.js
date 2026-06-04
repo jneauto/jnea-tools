@@ -253,6 +253,7 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
         {
             outputNotes.push({
                 label: question.label || question.id,
+                attention: question.attention === true,
                 value:
                     answers[question.id] ||
                     question.defaultValue ||
@@ -272,10 +273,11 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
             return;
         }
 
-        normalRows.push([
-            question.label || question.id,
-            cperFormatAnswer(answers[question.id])
-        ]);
+        normalRows.push({
+            label: question.label || question.id,
+            value: cperFormatAnswer(answers[question.id]),
+            attention: question.attention === true
+        });
     });
 
     let html = "";
@@ -307,8 +309,12 @@ function cperRenderQuestionnaireSection(section, answers, reportType)
 
                 ${outputNotes.map(function (note)
                 {
+                    const background = note.attention ? "#fef3c7" : "transparent";
+                    const border = note.attention ? "1px solid #f59e0b" : "1px solid #f3d08a";
+
                     return `
-                        <div style="border-bottom:1px solid #f3d08a;padding:10px 0;">
+                        <div style="border-bottom:${border};padding:10px;background:${background};">
+                            ${note.attention ? `<strong style="color:#92400e;">⚠ Attention Required</strong><br>` : ""}
                             <strong>
                                 ${cperEscapeHtml(note.label)}
                             </strong>
@@ -326,7 +332,11 @@ function cperRenderSection(title, rows)
 {
     const cleanRows = rows.filter(function (row)
     {
-        return !cperIsEmpty(row[1]);
+        const value = Array.isArray(row)
+            ? row[1]
+            : row.value;
+
+        return !cperIsEmpty(value);
     });
 
     if (!cleanRows.length)
@@ -341,14 +351,32 @@ function cperRenderSection(title, rows)
             <tbody>
                 ${cleanRows.map(function (row)
                 {
+                    const label = Array.isArray(row) ? row[0] : row.label;
+                    const value = Array.isArray(row) ? row[1] : row.value;
+                    const attention = !Array.isArray(row) && row.attention === true;
+
+                    const rowStyle = attention
+                        ? "background:#fef3c7;"
+                        : "";
+
+                    const cellStyle = attention
+                        ? "border:1px solid #f59e0b;padding:8px;"
+                        : "border:1px solid #ddd;padding:8px;";
+
                     return `
-                        <tr>
-                            <td style="border:1px solid #ddd;padding:8px;width:35%;font-weight:bold;">
-                                ${cperEscapeHtml(row[0])}
+                        <tr style="${rowStyle}">
+                            <td style="${cellStyle}width:35%;font-weight:bold;">
+                                ${attention ? `<span style="color:#92400e;">⚠ </span>` : ""}
+                                ${cperEscapeHtml(label)}
                             </td>
 
-                            <td style="border:1px solid #ddd;padding:8px;">
-                                ${cperEscapeHtml(cperFormatAnswer(row[1]))}
+                            <td style="${cellStyle}">
+                                ${cperEscapeHtml(cperFormatAnswer(value))}
+                                ${attention ? `
+                                    <div style="color:#92400e;font-weight:bold;margin-top:4px;">
+                                        Attention Required
+                                    </div>
+                                ` : ""}
                             </td>
                         </tr>
                     `;
