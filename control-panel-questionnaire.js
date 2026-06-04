@@ -151,21 +151,10 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
                         Save Progress
                     </button>
 
-                    <button id="cpqAnswersBtn" class="login-button" type="button" style="width:auto;">
-                        Show Answers
-                    </button>
-
-                    <button id="cpqEngineeringReportBtn" class="login-button" type="button" style="width:auto;">
-                        Engineering Report
-                    </button>
-
-                    <button id="cpqQuoteReportBtn" class="login-button" type="button" style="width:auto;">
-                        Quote Report
-                    </button>
-
-                    <button id="cpqBuilderReportBtn" class="login-button" type="button" style="width:auto;">
-                        Builder Report
-                    </button>
+					<button id="cpqEngineeringReportBtn" class="login-button" type="button" style="width:auto;">
+						Engineering Report
+					</button>
+					
                 </div>
 
                 <div id="cpqReportArea" style="margin-top:18px;"></div>
@@ -260,25 +249,18 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
             render();
         });
 
-        document.getElementById("cpqAnswersBtn").addEventListener("click", function ()
-        {
-            renderReport("all", "All Answers");
-        });
+		document.getElementById("cpqEngineeringReportBtn").addEventListener("click", function ()
+		{
+			if (!currentProject)
+			{
+				alert("Save the project first, then generate the engineering report.");
+				return;
+			}
 
-        document.getElementById("cpqEngineeringReportBtn").addEventListener("click", function ()
-        {
-            renderReport("engineering", "Engineering Report");
-        });
+			sessionStorage.setItem("jneSelectedControlPanelProjectId", currentProject.id);
+			renderControlPanelEngineeringReportPlaceholder();
+		});
 
-        document.getElementById("cpqQuoteReportBtn").addEventListener("click", function ()
-        {
-            renderReport("quote", "Quote Report");
-        });
-
-        document.getElementById("cpqBuilderReportBtn").addEventListener("click", function ()
-        {
-            renderReport("builder", "Builder Report");
-        });
     }
 
     async function saveProject()
@@ -554,6 +536,10 @@ function cpqRenderQuestion(question, answers)
             </button>
         `
         : "";
+		
+	const questionWrapStyle = question.attention
+		? "background:#fffbeb;border-left:5px solid #f59e0b;padding:12px;border-radius:10px;"
+		: "";		
 
     let inputHtml = "";
 
@@ -633,10 +619,22 @@ function cpqRenderQuestion(question, answers)
             </div>
         `;
     }
-    else if (question.type === "output")
-        {
-
-        }        
+	else if (question.type === "output")
+	{
+		inputHtml = `
+			<div
+				class="status"
+				style="
+					${question.attention ? "background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:bold;" : ""}
+					padding:10px;
+					border-radius:10px;
+				"
+			>
+				${question.attention ? "⚠ " : ""}
+				${cpqEscapeHtml(question.defaultValue || question.output || question.message || question.helpText || question.helptext || question.label || "")}
+			</div>
+		`;
+	}        
     else
     {
         inputHtml = `
@@ -650,7 +648,7 @@ function cpqRenderQuestion(question, answers)
     }
 
     return `
-        <div class="form-group">
+        <div class="form-group" style="${questionWrapStyle}">
             <label>
                 ${cpqEscapeHtml(question.label || question.id)}
                 ${requiredLabel}
