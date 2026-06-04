@@ -433,6 +433,17 @@ function cpqbRenderSection(section, sectionIndex)
 	const sectionCompleteIcon = allComplete
 	    ? `<span style="color:#2e7d32;font-size:28px;font-weight:bold;">✓</span>`
 	    : "";
+
+	const attentionCount = questions.filter(function (question)
+	{
+	    return question.attention === true;
+	}).length;
+	
+	const attentionBadge = attentionCount > 0
+	    ? `<span style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:bold;">
+	        ${attentionCount} attention highlight${attentionCount === 1 ? "" : "s"}
+	       </span>`
+	    : "";	
 	
     return `
 			<div
@@ -449,6 +460,7 @@ function cpqbRenderSection(section, sectionIndex)
 
                     <div class="status">
                         ID: ${cpqbEscapeHtml(section.id || "")} | Questions: ${questions.length}
+						${attentionBadge}
                     </div>
                 </div>
 
@@ -502,6 +514,10 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 	const completeIcon = question.complete
     ? `<span style="color:#2e7d32;font-size:20px;font-weight:bold;">✓</span>`
     : `<span style="color:#bbb;font-size:20px;">○</span>`;
+
+	const attentionIcon = question.attention
+	    ? `<span title="Attention Required" style="color:#b45309;font-size:20px;font-weight:bold;">⚠</span>`
+	    : "";	
 	
     return `
 			<div
@@ -521,6 +537,7 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
                 <div>
 					<span style="display:flex;gap:8px;align-items:center;">
 					    ${completeIcon}
+						${attentionIcon}
 					    <strong>${cpqbEscapeHtml(question.label || "Untitled Question")}</strong>
 					</span>
 
@@ -582,6 +599,7 @@ function cpqbNewQuestion()
         options: [],
         reports: [],
 		complete: false,
+		attention: false,
         visibleWhen: "",
         helper: null
     };
@@ -626,7 +644,12 @@ function cpqbRenderQuestionDialog(question)
 					<label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;font-weight:bold;color:#2e7d32;">
 					    <input id="cpqbQuestionComplete" type="checkbox" ${question.complete ? "checked" : ""}>
 					    Complete / Commissioned
-					</label>					
+					</label>	
+
+					<label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;font-weight:bold;color:#b45309;">
+					    <input id="cpqbQuestionAttention" type="checkbox" ${question.attention ? "checked" : ""}>
+					    Attention Required
+					</label>
                 </div>
             </div>
 
@@ -772,6 +795,7 @@ function cpqbReadQuestionDialog(dialog)
             .filter(Boolean),
         visibleWhen: dialog.querySelector("#cpqbQuestionVisibleWhen").value.trim(),
 		complete: dialog.querySelector("#cpqbQuestionComplete").checked,
+		attention: dialog.querySelector("#cpqbAttention").checked,
         reports: reports,
         helper: helper
     };
