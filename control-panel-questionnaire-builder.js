@@ -524,20 +524,22 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 			    class="cpqb-question-row"
 			    data-section-index="${sectionIndex}"
 			    data-question-index="${questionIndex}"
-			    style="
-                border:1px solid #ddd;
-                border-radius:10px;
-                padding:12px;
-                margin-bottom:10px;
-                background:#fff;
-                cursor:grab;
-            "
+				style="
+					border:${question.attention ? "1px solid #f59e0b" : "1px solid #ddd"};
+					border-left:${question.attention ? "5px solid #f59e0b" : "1px solid #ddd"};
+					border-radius:10px;
+					padding:12px;
+					margin-bottom:10px;
+					background:${question.attention ? "#fffbeb" : "#fff"};
+					cursor:grab;
+				"
         >
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                 <div>
 					<span style="display:flex;gap:8px;align-items:center;">
 					    ${completeIcon}
 						${attentionIcon}
+						${question.attention ? `<span style="color:#92400e;font-size:12px;font-weight:bold;">Attention</span>` : ""}
 					    <strong>${cpqbEscapeHtml(question.label || "Untitled Question")}</strong>
 					</span>
 
