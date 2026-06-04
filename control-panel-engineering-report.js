@@ -70,6 +70,22 @@ function renderControlPanelEngineeringReportTool(activeQuestionnaire, savedProje
     let selectedProjectId = "";
     let currentProject = null;
     let answers = {};
+	
+	const storedProjectId = sessionStorage.getItem("jneSelectedControlPanelProjectId");
+
+	if (storedProjectId)
+	{
+		selectedProjectId = storedProjectId;
+
+		currentProject = savedProjects.find(function (project)
+		{
+			return project.id === selectedProjectId;
+		}) || null;
+
+		answers = cperClone(currentProject?.answers || {});
+
+		sessionStorage.removeItem("jneSelectedControlPanelProjectId");
+	}	
 
     function render()
     {
