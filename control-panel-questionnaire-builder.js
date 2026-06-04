@@ -795,7 +795,7 @@ function cpqbReadQuestionDialog(dialog)
             .filter(Boolean),
         visibleWhen: dialog.querySelector("#cpqbQuestionVisibleWhen").value.trim(),
 		complete: dialog.querySelector("#cpqbQuestionComplete").checked,
-		attention: dialog.querySelector("#cpqbAttention").checked,
+		attention: dialog.querySelector("#cpqbQuestionAttention").checked,
         reports: reports,
         helper: helper
     };
