@@ -513,6 +513,22 @@ body
   text-decoration: underline;
 }
 
+.cpqb-icon-button
+{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 8px;
+}
+
+.cpqb-icon-button svg
+{
+    width: 18px;
+    height: 18px;
+}
+
 @media (max-width: 900px)
 {
   .app-shell
