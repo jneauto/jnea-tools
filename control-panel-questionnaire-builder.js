@@ -53,6 +53,7 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
 
     let questionnaire = cpqbClone(activeQuestionnaire.definition || {});
     let draggedItem = null;
+	let hideCompletedSections = false;
 
     if (!Array.isArray(questionnaire.sections))
     {
@@ -85,13 +86,24 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
                     <button id="cpqbSaveBtn" class="login-button" type="button" style="width:auto;background:#2e7d32;">
                         Save As New Version
                     </button>
+					
+					<label style="display:flex;gap:8px;align-items:center;font-weight:bold;">
+						<input id="cpqbHideCompletedSections" type="checkbox" ${hideCompletedSections ? "checked" : ""}>
+						Hide completed sections
+					</label>
+					
                 </div>
 
                 <div id="cpqbSections">
-                    ${questionnaire.sections.map(function (section, sectionIndex)
-                    {
-                        return cpqbRenderSection(section, sectionIndex);
-                    }).join("")}
+					${questionnaire.sections.map(function (section, sectionIndex)
+					{
+						if (hideCompletedSections && section.complete === true)
+						{
+							return "";
+						}
+
+						return cpqbRenderSection(section, sectionIndex);
+					}).join("")}
                 </div>
             </div>
         `;
@@ -135,6 +147,12 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
                 editSection(Number(button.dataset.cpqbEditSection));
             });
         });
+		
+		document.getElementById("cpqbHideCompletedSections").addEventListener("change", function (event)
+		{
+			hideCompletedSections = event.target.checked;
+			render();
+		});		
 		
 		document.querySelectorAll("[data-cpqb-duplicate-section]").forEach(function (button)
 		{
