@@ -110,11 +110,12 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
                 return;
             }
 
-            questionnaire.sections.push({
-                id: cpqbSlug(label),
-                label: label,
-                questions: []
-            });
+			questionnaire.sections.push({
+				id: cpqbSlug(label),
+				label: label,
+				complete: false,
+				questions: []
+			});
 
             render();
         });
@@ -234,22 +235,46 @@ document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
 		});
     }
 
-    function editSection(sectionIndex)
-    {
-        const section = questionnaire.sections[sectionIndex];
+	function editSection(sectionIndex)
+	{
+		const section = questionnaire.sections[sectionIndex];
 
-        const label = prompt("Section label:", section.label || "");
+		const html = `
+			<div class="form-group">
+				<label>Section ID</label>
+				<input id="cpqbSectionId" class="tool-input" value="${cpqbEscapeHtml(section.id || "")}">
+			</div>
 
-        if (!label)
-        {
-            return;
-        }
+			<div class="form-group">
+				<label>Section Label</label>
+				<input id="cpqbSectionLabel" class="tool-input" value="${cpqbEscapeHtml(section.label || "")}">
+			</div>
 
-        section.label = label;
-        section.id = section.id || cpqbSlug(label);
+			<label style="display:flex;gap:8px;align-items:center;font-weight:bold;color:#2e7d32;">
+				<input id="cpqbSectionComplete" type="checkbox" ${section.complete ? "checked" : ""}>
+				Section Complete / Commissioned
+			</label>
+		`;
 
-        render();
-    }
+		cpqbShowDialog("Edit Section", html, function (dialog)
+		{
+			const label = dialog.querySelector("#cpqbSectionLabel").value.trim();
+			const id = dialog.querySelector("#cpqbSectionId").value.trim();
+
+			if (!label)
+			{
+				alert("Section label is required.");
+				return false;
+			}
+
+			section.label = label;
+			section.id = id || cpqbSlug(label);
+			section.complete = dialog.querySelector("#cpqbSectionComplete").checked;
+
+			render();
+			return true;
+		});
+	}
 
     function deleteSection(sectionIndex)
     {
@@ -423,16 +448,9 @@ function cpqbRenderSection(section, sectionIndex)
 {
     const questions = Array.isArray(section.questions) ? section.questions : [];
 
-	const allComplete =
-	    questions.length > 0 &&
-	    questions.every(function (question)
-	    {
-	        return question.complete === true;
-	    });
-	
-	const sectionCompleteIcon = allComplete
-	    ? `<span style="color:#2e7d32;font-size:28px;font-weight:bold;">✓</span>`
-	    : "";
+	const sectionCompleteIcon = section.complete === true
+		? `<span style="color:#2e7d32;font-size:28px;font-weight:bold;">✓</span>`
+		: "";
 
 	const attentionCount = questions.filter(function (question)
 	{
@@ -599,7 +617,7 @@ function cpqbNewQuestion()
         required: false,
         helpText: "",
         options: [],
-        reports: [],
+        reports: ["quote","engineering"],
 		complete: false,
 		attention: false,
         visibleWhen: "",
