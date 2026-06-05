@@ -97,6 +97,12 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
         `;
 
         bindEvents();
+		
+		if (window.lucide)
+		{
+			window.lucide.createIcons();
+		}
+		
     }
 
     function bindEvents()
@@ -129,6 +135,14 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
                 editSection(Number(button.dataset.cpqbEditSection));
             });
         });
+		
+		document.querySelectorAll("[data-cpqb-duplicate-section]").forEach(function (button)
+		{
+			button.addEventListener("click", function ()
+			{
+				duplicateSection(Number(button.dataset.cpqbDuplicateSection));
+			});
+		});		
 
 		document.querySelectorAll("[data-cpqb-test-section]").forEach(function (button)
 		{
@@ -176,7 +190,7 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
             });
         });
 
-document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
+document.querySelectorAll("[data-cpqb-drag-handle]").forEach(function (handle)
 {
     handle.addEventListener("dragstart", function (event)
     {
@@ -275,6 +289,20 @@ document.querySelectorAll(".cpqb-drag-handle").forEach(function (handle)
 			return true;
 		});
 	}
+	
+	function duplicateSection(sectionIndex)
+	{
+		const source = questionnaire.sections[sectionIndex];
+		const copy = cpqbClone(source);
+
+		copy.id = cpqbUniqueSectionId(copy.id || "section_copy", questionnaire.sections);
+		copy.label = (copy.label || "Untitled Section") + " Copy";
+		copy.complete = false;
+
+		questionnaire.sections.splice(sectionIndex + 1, 0, copy);
+
+		render();
+	}	
 
     function deleteSection(sectionIndex)
     {
@@ -483,37 +511,48 @@ function cpqbRenderSection(section, sectionIndex)
                 </div>
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-					<button
-					    class="login-button cpqb-drag-handle"
-					    type="button"
-					    draggable="true"
-					    data-drag-type="section"
-					    data-section-index="${sectionIndex}"
-					    style="width:auto;background:#64748b;"
-					>
-					    Drag Section
-					</button>
+					${cpqbIconButton(
+						"grip",
+						"Drag Section",
+						`draggable="true" data-drag-type="section" data-section-index="${sectionIndex}"`,
+						"#64748b",
+						"cpqb-drag-handle"
+					)}
 
-					<button
-					    class="login-button"
-					    type="button"
-					    style="width:auto;background:#64748b;"
-					    data-cpqb-test-section="${sectionIndex}"
-					>
-					    Test Section
-					</button>					
-					
-                    <button class="login-button" type="button" style="width:auto;" data-cpqb-add-question="${sectionIndex}">
-                        Add Question
-                    </button>
+					${cpqbIconButton(
+						"copy-plus",
+						"Duplicate Section",
+						`data-cpqb-duplicate-section="${sectionIndex}"`,
+						"#64748b"
+					)}
 
-                    <button class="login-button" type="button" style="width:auto;" data-cpqb-edit-section="${sectionIndex}">
-                        Edit
-                    </button>
+					${cpqbIconButton(
+						"bug-play",
+						"Test Section",
+						`data-cpqb-test-section="${sectionIndex}"`,
+						"#64748b"
+					)}
 
-                    <button class="login-button" type="button" style="width:auto;background:#c62828;" data-cpqb-delete-section="${sectionIndex}">
-                        Delete
-                    </button>
+					${cpqbIconButton(
+						"circle-plus",
+						"Add Question",
+						`data-cpqb-add-question="${sectionIndex}"`,
+						"#0193cf"
+					)}
+
+					${cpqbIconButton(
+						"pencil",
+						"Edit Section",
+						`data-cpqb-edit-section="${sectionIndex}"`,
+						"#64748b"
+					)}
+
+					${cpqbIconButton(
+						"circle-x",
+						"Delete Section",
+						`data-cpqb-delete-section="${sectionIndex}"`,
+						"#c62828"
+					)}
                 </div>
             </div>
 
@@ -570,38 +609,27 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
                 </div>
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-					<button
-					    class="login-button cpqb-drag-handle"
-					    type="button"
-					    draggable="true"
-					    data-drag-type="question"
-					    data-section-index="${sectionIndex}"
-					    data-question-index="${questionIndex}"
-					    style="width:auto;background:#64748b;"
-					>
-					    Drag
-					</button>				
-                    <button
-                        class="login-button"
-                        type="button"
-                        style="width:auto;"
-                        data-cpqb-edit-question="1"
-                        data-section-index="${sectionIndex}"
-                        data-question-index="${questionIndex}"
-                    >
-                        Edit
-                    </button>
+					${cpqbIconButton(
+						"grip-horizontal",
+						"Drag Question",
+						`draggable="true" data-drag-type="question" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
+						"#64748b",
+						"cpqb-drag-handle"
+					)}
 
-                    <button
-                        class="login-button"
-                        type="button"
-                        style="width:auto;background:#c62828;"
-                        data-cpqb-delete-question="1"
-                        data-section-index="${sectionIndex}"
-                        data-question-index="${questionIndex}"
-                    >
-                        Delete
-                    </button>
+					${cpqbIconButton(
+						"pencil",
+						"Edit Question",
+						`data-cpqb-edit-question="1" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
+						"#64748b"
+					)}
+
+					${cpqbIconButton(
+						"circle-x",
+						"Delete Question",
+						`data-cpqb-delete-question="1" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
+						"#c62828"
+					)}
                 </div>
             </div>
         </div>
@@ -1343,6 +1371,26 @@ function cpqbSlug(value)
         .replace(/^_+|_+$/g, "");
 }
 
+function cpqbUniqueSectionId(baseId, sections)
+{
+    const cleanBase = cpqbSlug(baseId || "section");
+    let candidate = cleanBase + "_copy";
+    let counter = 2;
+
+    const existingIds = sections.map(function (section)
+    {
+        return section.id;
+    });
+
+    while (existingIds.includes(candidate))
+    {
+        candidate = cleanBase + "_copy_" + counter;
+        counter += 1;
+    }
+
+    return candidate;
+}
+
 function cpqbEscapeHtml(value)
 {
     return String(value || "")
@@ -1928,4 +1976,20 @@ function cpqbShowSectionTestDialog(section)
     }
 
     renderSectionTest();
+}
+
+function cpqbIconButton(iconName, title, extraAttributes, background, extraClass)
+{
+    return `
+        <button
+            class="login-button cpqb-icon-button ${extraClass || ""}"
+            type="button"
+            title="${cpqbEscapeHtml(title)}"
+            aria-label="${cpqbEscapeHtml(title)}"
+            style="width:auto;background:${background || "#64748b"};"
+            ${extraAttributes || ""}
+        >
+            <i data-lucide="${cpqbEscapeHtml(iconName)}"></i>
+        </button>
+    `;
 }
