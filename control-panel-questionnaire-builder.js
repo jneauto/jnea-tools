@@ -505,7 +505,7 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
 	    const copy = cpqbClone(source);
 	
 	    copy.id = cpqbUniqueQuestionId(copy.id || "question_copy", questionnaire.sections);
-	    copy.label = (copy.label || "Untitled Question") + " Copy";
+	    copy.label = (copy.label || "Untitled Question");
 	    copy.complete = false;
 	
 	    section.questions.splice(questionIndex + 1, 0, copy);
@@ -1607,7 +1607,8 @@ function cpqbUniqueSectionId(baseId, sections)
 
 function cpqbUniqueQuestionId(baseId, sections)
 {
-    const cleanBase = cpqbSlug(baseId || "question");
+    const cleanBase = String(baseId || "question").trim();
+
     let candidate = cleanBase + "_copy";
     let counter = 2;
 
@@ -1623,7 +1624,7 @@ function cpqbUniqueQuestionId(baseId, sections)
 
     while (existingIds.includes(candidate))
     {
-        candidate = cleanBase + "_copy_" + counter;
+        candidate = cleanBase + "_copy" + counter;
         counter += 1;
     }
 
