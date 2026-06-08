@@ -502,14 +502,14 @@ function cpqbRenderSection(section, sectionIndex)
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
 					${cpqbIconButton(
-						"arrow-up",
+						"square-arrow-up",
 						"Move Section Up",
 						`data-cpqb-section-up="${sectionIndex}"`,
 						"#64748b"
 					)}
 
 					${cpqbIconButton(
-						"arrow-down",
+						"square-arrow-down",
 						"Move Section Down",
 						`data-cpqb-section-down="${sectionIndex}"`,
 						"#64748b"
