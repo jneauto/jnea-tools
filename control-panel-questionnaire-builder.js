@@ -58,6 +58,8 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
     {
         questionnaire.sections = [];
     }
+	
+
 
     function render()
     {
@@ -158,6 +160,22 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
 			button.addEventListener("click", function ()
 			{
 				duplicateSection(Number(button.dataset.cpqbDuplicateSection));
+			});
+		});
+
+		document.querySelectorAll("[data-cpqb-copy-section-json]").forEach(function (button)
+		{
+			button.addEventListener("click", function ()
+			{
+				copySectionJson(Number(button.dataset.cpqbCopySectionJson));
+			});
+		});
+
+		document.querySelectorAll("[data-cpqb-paste-section-json]").forEach(function (button)
+		{
+			button.addEventListener("click", function ()
+			{
+				pasteSectionJson(Number(button.dataset.cpqbPasteSectionJson));
 			});
 		});		
 
@@ -300,6 +318,73 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
 			return true;
 		});
 	}
+	
+	async function copySectionJson(sectionIndex)
+	{
+		const section = questionnaire.sections[sectionIndex];
+
+		if (!section)
+		{
+			return;
+		}
+
+		const json = JSON.stringify(section, null, 2);
+
+		try
+		{
+			await navigator.clipboard.writeText(json);
+			alert("Section JSON copied to clipboard.");
+		}
+		catch (err)
+		{
+			cpqbShowJsonDialog("Copy Section JSON", json, function ()
+			{
+				return true;
+			});
+		}
+	}
+
+	function pasteSectionJson(sectionIndex)
+	{
+		const section = questionnaire.sections[sectionIndex];
+
+		if (!section)
+		{
+			return;
+		}
+
+		cpqbShowJsonDialog(
+			"Paste Section JSON",
+			JSON.stringify(section, null, 2),
+			function (dialog)
+			{
+				const rawJson = dialog.querySelector("#cpqbJsonText").value;
+
+				let parsed = null;
+
+				try
+				{
+					parsed = JSON.parse(rawJson);
+				}
+				catch (err)
+				{
+					alert("Invalid JSON: " + err.message);
+					return false;
+				}
+
+				if (!parsed.id || !parsed.label || !Array.isArray(parsed.questions))
+				{
+					alert("Section JSON must include id, label, and questions array.");
+					return false;
+				}
+
+				questionnaire.sections[sectionIndex] = parsed;
+
+				render();
+				return true;
+			}
+		);
+	}	
 	
 	function duplicateSection(sectionIndex)
 	{
@@ -574,6 +659,20 @@ function cpqbRenderSection(section, sectionIndex)
 						`data-cpqb-edit-section="${sectionIndex}"`,
 						"#64748b"
 					)}
+					
+					${cpqbIconButton(
+						"clipboard-copy",
+						"Copy Section JSON",
+						`data-cpqb-copy-section-json="${sectionIndex}"`,
+						"#64748b"
+					)}
+
+					${cpqbIconButton(
+						"clipboard-paste",
+						"Paste Section JSON",
+						`data-cpqb-paste-section-json="${sectionIndex}"`,
+						"#64748b"
+					)}					
 
 					${cpqbIconButton(
 						"circle-x",
@@ -1132,6 +1231,80 @@ function cpqbDefaultHelper()
         questions: [],
         rules: []
     };
+}
+
+function cpqbShowJsonDialog(title, jsonText, onSave)
+{
+    const overlay = document.createElement("div");
+
+    overlay.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.45);
+        z-index:9999;
+        display:flex;
+        align-items:flex-start;
+        justify-content:center;
+        overflow:auto;
+        padding:30px 12px;
+    `;
+
+    overlay.innerHTML = `
+        <div
+            style="
+                background:#fff;
+                width:min(1000px,100%);
+                border-radius:14px;
+                padding:20px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.25);
+            "
+        >
+            <h2 style="margin-top:0;">
+                ${cpqbEscapeHtml(title)}
+            </h2>
+
+            <div class="form-group">
+                <label>Section JSON</label>
+
+                <textarea
+                    id="cpqbJsonText"
+                    class="tool-input"
+                    rows="24"
+                    style="font-family:Consolas, Monaco, monospace;font-size:13px;"
+                >${cpqbEscapeHtml(jsonText)}</textarea>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;">
+                <button id="cpqbJsonCancel" class="login-button" type="button" style="width:auto;background:#777;">
+                    Cancel
+                </button>
+
+                <button id="cpqbJsonSave" class="login-button" type="button" style="width:auto;background:#2e7d32;">
+                    Apply JSON
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector("#cpqbJsonCancel").addEventListener("click", function ()
+    {
+        document.body.removeChild(overlay);
+    });
+
+    overlay.querySelector("#cpqbJsonSave").addEventListener("click", function ()
+    {
+        const shouldClose = onSave(overlay);
+
+        if (shouldClose)
+        {
+            document.body.removeChild(overlay);
+        }
+    });
+
+    overlay.querySelector("#cpqbJsonText").focus();
+    overlay.querySelector("#cpqbJsonText").select();
 }
 
 function cpqbShowDialog(title, bodyHtml, onSave)
