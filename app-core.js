@@ -236,7 +236,7 @@
           </button>
 
           <button class="nav-button" id="navCpe">
-            Control Panel Designer's Guide
+            Control Panel Designer's Guide (Beta)
           </button>
 
         ${
