@@ -185,6 +185,17 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
             });
         });
 
+		document.querySelectorAll("[data-cpqb-duplicate-question]").forEach(function (button)
+		{
+		    button.addEventListener("click", function ()
+		    {
+		        duplicateQuestion(
+		            Number(button.dataset.sectionIndex),
+		            Number(button.dataset.questionIndex)
+		        );
+		    });
+		});		
+
         document.querySelectorAll("[data-cpqb-edit-question]").forEach(function (button)
         {
             button.addEventListener("click", function ()
@@ -395,6 +406,27 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
             return true;
         });
     }
+
+	function duplicateQuestion(sectionIndex, questionIndex)
+	{
+	    const section = questionnaire.sections[sectionIndex];
+	
+	    if (!section || !Array.isArray(section.questions))
+	    {
+	        return;
+	    }
+	
+	    const source = section.questions[questionIndex];
+	    const copy = cpqbClone(source);
+	
+	    copy.id = cpqbUniqueQuestionId(copy.id || "question_copy", questionnaire.sections);
+	    copy.label = (copy.label || "Untitled Question") + " Copy";
+	    copy.complete = false;
+	
+	    section.questions.splice(questionIndex + 1, 0, copy);
+	
+	    render();
+	}	
 
     function deleteQuestion(sectionIndex, questionIndex)
     {
@@ -625,6 +657,13 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 						`data-cpqb-edit-question="1" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
 						"#64748b"
 					)}
+
+					${cpqbIconButton(
+					    "copy-plus",
+					    "Duplicate Question",
+					    `data-cpqb-duplicate-question="1" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
+					    "#64748b"
+					)}					
 
 					${cpqbIconButton(
 						"circle-x",
@@ -1382,6 +1421,31 @@ function cpqbUniqueSectionId(baseId, sections)
     const existingIds = sections.map(function (section)
     {
         return section.id;
+    });
+
+    while (existingIds.includes(candidate))
+    {
+        candidate = cleanBase + "_copy_" + counter;
+        counter += 1;
+    }
+
+    return candidate;
+}
+
+function cpqbUniqueQuestionId(baseId, sections)
+{
+    const cleanBase = cpqbSlug(baseId || "question");
+    let candidate = cleanBase + "_copy";
+    let counter = 2;
+
+    const existingIds = [];
+
+    sections.forEach(function (section)
+    {
+        (section.questions || []).forEach(function (question)
+        {
+            existingIds.push(question.id);
+        });
     });
 
     while (existingIds.includes(candidate))
