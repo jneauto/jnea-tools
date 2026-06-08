@@ -52,7 +52,6 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
     const sb = window.jnea.sb;
 
     let questionnaire = cpqbClone(activeQuestionnaire.definition || {});
-    let draggedItem = null;
 	let hideCompletedSections = false;
 
     if (!Array.isArray(questionnaire.sections))
@@ -207,64 +206,47 @@ function renderControlPanelQuestionnaireBuilder(activeQuestionnaire)
                 );
             });
         });
-
-document.querySelectorAll("[data-cpqb-drag-handle]").forEach(function (handle)
-{
-    handle.addEventListener("dragstart", function (event)
-    {
-        draggedItem = {
-            type: handle.dataset.dragType,
-            sectionIndex: Number(handle.dataset.sectionIndex),
-            questionIndex: handle.dataset.questionIndex === undefined
-                ? null
-                : Number(handle.dataset.questionIndex)
-        };
-
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", JSON.stringify(draggedItem));
-    });
-});
-
-		document.querySelectorAll(".card[data-section-index], .cpqb-question-row").forEach(function (target)
+		
+		document.querySelectorAll("[data-cpqb-section-up]").forEach(function (button)
 		{
-		    target.addEventListener("dragover", function (event)
-		    {
-		        event.preventDefault();
-		        target.classList.add("cpqb-drop-target");
-		    });
-		
-		    target.addEventListener("dragleave", function ()
-		    {
-		        target.classList.remove("cpqb-drop-target");
-		    });
-		
-		    target.addEventListener("drop", function (event)
-		    {
-		        event.preventDefault();
-		        event.stopPropagation();
-		
-		        target.classList.remove("cpqb-drop-target");
-		
-		        if (!draggedItem)
-		        {
-		            return;
-		        }
-		
-		        const isQuestionTarget = target.classList.contains("cpqb-question-row");
-		
-		        const targetData = {
-		            type: isQuestionTarget ? "question" : "section",
-		            sectionIndex: Number(target.dataset.sectionIndex),
-		            questionIndex: isQuestionTarget
-		                ? Number(target.dataset.questionIndex)
-		                : null
-		        };
-		
-		        handleDrop(draggedItem, targetData);
-		        draggedItem = null;
-		        render();
-		    });
+			button.addEventListener("click", function ()
+			{
+				moveSection(Number(button.dataset.cpqbSectionUp), -1);
+			});
 		});
+
+		document.querySelectorAll("[data-cpqb-section-down]").forEach(function (button)
+		{
+			button.addEventListener("click", function ()
+			{
+				moveSection(Number(button.dataset.cpqbSectionDown), 1);
+			});
+		});
+
+		document.querySelectorAll("[data-cpqb-question-up]").forEach(function (button)
+		{
+			button.addEventListener("click", function ()
+			{
+				moveQuestion(
+					Number(button.dataset.sectionIndex),
+					Number(button.dataset.questionIndex),
+					-1
+				);
+			});
+		});
+
+		document.querySelectorAll("[data-cpqb-question-down]").forEach(function (button)
+		{
+			button.addEventListener("click", function ()
+			{
+				moveQuestion(
+					Number(button.dataset.sectionIndex),
+					Number(button.dataset.questionIndex),
+					1
+				);
+			});
+		});		
+
     }
 
 	function editSection(sectionIndex)
@@ -318,6 +300,51 @@ document.querySelectorAll("[data-cpqb-drag-handle]").forEach(function (handle)
 		copy.complete = false;
 
 		questionnaire.sections.splice(sectionIndex + 1, 0, copy);
+
+		render();
+	}
+	
+	function moveSection(sectionIndex, direction)
+	{
+		const targetIndex = sectionIndex + direction;
+
+		if (
+			targetIndex < 0 ||
+			targetIndex >= questionnaire.sections.length
+		)
+		{
+			return;
+		}
+
+		const moved = questionnaire.sections.splice(sectionIndex, 1)[0];
+
+		questionnaire.sections.splice(targetIndex, 0, moved);
+
+		render();
+	}
+
+	function moveQuestion(sectionIndex, questionIndex, direction)
+	{
+		const section = questionnaire.sections[sectionIndex];
+
+		if (!section || !Array.isArray(section.questions))
+		{
+			return;
+		}
+
+		const targetIndex = questionIndex + direction;
+
+		if (
+			targetIndex < 0 ||
+			targetIndex >= section.questions.length
+		)
+		{
+			return;
+		}
+
+		const moved = section.questions.splice(questionIndex, 1)[0];
+
+		section.questions.splice(targetIndex, 0, moved);
 
 		render();
 	}	
@@ -388,61 +415,6 @@ document.querySelectorAll("[data-cpqb-drag-handle]").forEach(function (handle)
 	
 		cpqbShowSectionTestDialog(section);
 	}		
-
-	function handleDrop(from, to)
-	{
-	    if (from.type === "section")
-	    {
-	        if (to.type !== "section")
-	        {
-	            return;
-	        }
-	
-	        if (from.sectionIndex === to.sectionIndex)
-	        {
-	            return;
-	        }
-	
-	        const moved = questionnaire.sections.splice(from.sectionIndex, 1)[0];
-	
-	        let insertIndex = to.sectionIndex;
-	
-	        if (from.sectionIndex < to.sectionIndex)
-	        {
-	            insertIndex = insertIndex - 1;
-	        }
-	
-	        questionnaire.sections.splice(insertIndex, 0, moved);
-	        return;
-	    }
-	
-	    if (from.type === "question")
-	    {
-	        if (to.type !== "question")
-	        {
-	            return;
-	        }
-	
-	        const fromQuestions = questionnaire.sections[from.sectionIndex].questions;
-	        const toQuestions = questionnaire.sections[to.sectionIndex].questions;
-	
-	        if (!fromQuestions || !toQuestions)
-	        {
-	            return;
-	        }
-	
-	        const moved = fromQuestions.splice(from.questionIndex, 1)[0];
-	
-	        let insertIndex = to.questionIndex;
-	
-	        if (from.sectionIndex === to.sectionIndex && from.questionIndex < to.questionIndex)
-	        {
-	            insertIndex = insertIndex - 1;
-	        }
-	
-	        toQuestions.splice(insertIndex, 0, moved);
-	    }
-	}
 
     async function saveAsNewVersion()
     {
@@ -530,11 +502,17 @@ function cpqbRenderSection(section, sectionIndex)
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
 					${cpqbIconButton(
-						"grip",
-						"Drag Section",
-						`draggable="true" data-drag-type="section" data-section-index="${sectionIndex}"`,
-						"#64748b",
-						"cpqb-drag-handle"
+						"arrow-up",
+						"Move Section Up",
+						`data-cpqb-section-up="${sectionIndex}"`,
+						"#64748b"
+					)}
+
+					${cpqbIconButton(
+						"arrow-down",
+						"Move Section Down",
+						`data-cpqb-section-down="${sectionIndex}"`,
+						"#64748b"
 					)}
 
 					${cpqbIconButton(
@@ -628,11 +606,17 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
 					${cpqbIconButton(
-						"grip-horizontal",
-						"Drag Question",
-						`draggable="true" data-drag-type="question" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
-						"#64748b",
-						"cpqb-drag-handle"
+						"arrow-up",
+						"Move Question Up",
+						`data-cpqb-question-up="1" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
+						"#64748b"
+					)}
+
+					${cpqbIconButton(
+						"arrow-down",
+						"Move Question Down",
+						`data-cpqb-question-down="1" data-section-index="${sectionIndex}" data-question-index="${questionIndex}"`,
+						"#64748b"
 					)}
 
 					${cpqbIconButton(
