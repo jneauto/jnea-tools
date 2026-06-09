@@ -1,6 +1,8 @@
 function renderAnalogScaleTool()
 {
   document.getElementById("pageTitle").textContent = "Analog Scaling";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
   const content = document.getElementById("content");
 
