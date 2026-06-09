@@ -593,6 +593,7 @@ function cpqRenderQuestion(question, answers)
 {
     const value = answers[question.id] ?? question.defaultValue ?? "";
     const requiredLabel = question.required ? `<span style="color:#c62828;"> *</span>` : "";
+
     const helperButton = question.helper
         ? `
             <button
@@ -605,33 +606,23 @@ function cpqRenderQuestion(question, answers)
             </button>
         `
         : "";
-		
-	const questionWrapStyle = question.attention
-		? "background:#fffbeb;border-left:5px solid #f59e0b;padding:12px;border-radius:10px;"
-		: "";		
+
+    const questionWrapStyle = question.attention
+        ? "background:#fffbeb;border-left:5px solid #f59e0b;padding:12px;border-radius:10px;"
+        : "";
 
     let inputHtml = "";
 
     if (question.type === "textarea")
     {
         inputHtml = `
-            <textarea
-                class="tool-input"
-                rows="4"
-                data-cpq-question="${cpqEscapeHtml(question.id)}"
-            >${cpqEscapeHtml(value)}</textarea>
+            <textarea class="tool-input" rows="4" data-cpq-question="${cpqEscapeHtml(question.id)}">${cpqEscapeHtml(value)}</textarea>
         `;
     }
     else if (question.type === "number")
     {
         inputHtml = `
-            <input
-                class="tool-input"
-                type="number"
-                step="any"
-                value="${cpqEscapeHtml(value)}"
-                data-cpq-question="${cpqEscapeHtml(question.id)}"
-            >
+            <input class="tool-input" type="number" step="any" value="${cpqEscapeHtml(value)}" data-cpq-question="${cpqEscapeHtml(question.id)}">
         `;
     }
     else if (question.type === "yesno")
@@ -652,7 +643,6 @@ function cpqRenderQuestion(question, answers)
         inputHtml = `
             <select class="tool-select" data-cpq-question="${cpqEscapeHtml(question.id)}">
                 <option value="">Select...</option>
-
                 ${options.map(function (option)
                 {
                     return `
@@ -664,56 +654,64 @@ function cpqRenderQuestion(question, answers)
             </select>
         `;
     }
-	else if (question.type === "multiselect")
-	{
-	    const options = Array.isArray(question.options) ? question.options : [];
-	    const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
-	
-	    inputHtml = `
-	        <div style="display:grid;gap:8px;justify-items:start;">
-	            ${options.map(function (option)
-	            {
-	                return `
-	                    <label style="display:inline-flex;gap:8px;align-items:center;justify-content:flex-start;width:auto;">
-	                        <input
-	                            type="checkbox"
-	                            value="${cpqEscapeHtml(option)}"
-	                            data-cpq-question="${cpqEscapeHtml(question.id)}"
-	                            ${values.includes(option) ? "checked" : ""}
-	                            style="margin:0;"
-	                        >
-	                        <span>${cpqEscapeHtml(option)}</span>
-	                    </label>
-	                `;
-	            }).join("")}
-	        </div>
-	    `;
-	}
-	else if (question.type === "output")
-	{
-		inputHtml = `
-			<div
-				class="status"
-				style="
-					${question.attention ? "background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:bold;" : ""}
-					padding:10px;
-					border-radius:10px;
-				"
-			>
-				${question.attention ? "⚠ " : ""}
-				${cpqEscapeHtml(question.defaultValue || question.output || question.message || question.helpText || question.helptext || question.label || "")}
-			</div>
-		`;
-	}        
+    else if (question.type === "multiselect")
+    {
+        const options = Array.isArray(question.options) ? question.options : [];
+        const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
+
+        inputHtml = `
+            <div style="display:grid;gap:10px;justify-items:start;">
+                ${options.map(function (option)
+                {
+                    return `
+                        <label
+                            style="
+                                display:grid;
+                                grid-template-columns:20px auto;
+                                gap:8px;
+                                align-items:start;
+                                justify-items:start;
+                                width:max-content;
+                                max-width:100%;
+                            "
+                        >
+                            <input
+                                type="checkbox"
+                                value="${cpqEscapeHtml(option)}"
+                                data-cpq-question="${cpqEscapeHtml(question.id)}"
+                                ${values.includes(option) ? "checked" : ""}
+                                style="margin:0;margin-top:3px;"
+                            >
+
+                            <span style="line-height:1.2;text-align:left;">
+                                ${cpqEscapeHtml(option)}
+                            </span>
+                        </label>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    }
+    else if (question.type === "output")
+    {
+        inputHtml = `
+            <div
+                class="status"
+                style="
+                    ${question.attention ? "background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:bold;" : ""}
+                    padding:10px;
+                    border-radius:10px;
+                "
+            >
+                ${question.attention ? "⚠ " : ""}
+                ${cpqEscapeHtml(question.defaultValue || question.output || question.message || question.helpText || question.helptext || question.label || "")}
+            </div>
+        `;
+    }
     else
     {
         inputHtml = `
-            <input
-                class="tool-input"
-                type="text"
-                value="${cpqEscapeHtml(value)}"
-                data-cpq-question="${cpqEscapeHtml(question.id)}"
-            >
+            <input class="tool-input" type="text" value="${cpqEscapeHtml(value)}" data-cpq-question="${cpqEscapeHtml(question.id)}">
         `;
     }
 
