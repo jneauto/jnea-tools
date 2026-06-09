@@ -5,7 +5,7 @@ async function renderControlPanelEngineeringReportPlaceholder()
 
     document.getElementById("pageTitle").textContent = "Industrial Control Panel Engineering Report";
 	
-    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.01";
 
     const content = document.getElementById("content");
 
