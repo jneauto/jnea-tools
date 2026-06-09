@@ -726,13 +726,15 @@ function cpqbRenderQuestion(question, sectionIndex, questionIndex)
 						${question.attention ? `<span style="color:#92400e;font-size:12px;font-weight:bold;">Attention</span>` : ""}
 					    <strong>${cpqbEscapeHtml(question.label || "Untitled Question")}</strong>
 					</span>
-
-                    <div class="status">
-                        ID: ${cpqbEscapeHtml(question.id || "")}
-                        | Type: ${cpqbEscapeHtml(question.type || "")}
-                        | Reports: ${cpqbEscapeHtml((question.reports || []).join(", "))}
-                        ${question.helper ? "| Has helper" : ""}
-                    </div>
+					
+					<div class="status">
+					    ID: ${cpqbEscapeHtml(question.id || "")}
+					    | Type: ${cpqbEscapeHtml(question.type || "")}
+					    | Options: ${cpqbEscapeHtml(cpqbOptionsCsv(question.options))}
+					    | Visible when: ${cpqbEscapeHtml(question.visibleWhen || question.visiblewhen || "")}
+					    ${question.helper ? "| Has helper" : "| No helper"}
+					    | Reports: ${cpqbEscapeHtml((question.reports || []).join(", "))}
+					</div>
                 </div>
 
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -2232,4 +2234,14 @@ function cpqbIconButton(iconName, title, extraAttributes, background, extraClass
             <i data-lucide="${cpqbEscapeHtml(iconName)}"></i>
         </button>
     `;
+}
+
+function cpqbOptionsCsv(options)
+{
+    if (!Array.isArray(options) || !options.length)
+    {
+        return "";
+    }
+
+    return options.join(", ");
 }
