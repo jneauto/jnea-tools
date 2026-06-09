@@ -3,6 +3,8 @@ async function renderPlcCardsPlaceholder()
   const sb = window.jnea.sb;
 
   document.getElementById("pageTitle").textContent = "PLC Card Fusing";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
   const content = document.getElementById("content");
 
