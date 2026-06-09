@@ -435,6 +435,21 @@ body
     outline-offset: 4px;
 }
 
+.cpq-icon-button
+{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:38px;
+    height:38px;
+    padding:8px;
+}
+
+.cpq-icon-button svg
+{
+    width:18px;
+    height:18px;
+}
 .as-percent-button
 {
   border: 1px solid #0193cf;
