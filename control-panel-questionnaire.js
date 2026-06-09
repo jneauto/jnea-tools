@@ -4,6 +4,8 @@ async function renderControlPanelQuestionnairePlaceholder()
     const currentUser = window.jnea.getCurrentUser();
 
     document.getElementById("pageTitle").textContent = "Control Panel Questionnaire";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
     const content = document.getElementById("content");
 
