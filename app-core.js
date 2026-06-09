@@ -254,18 +254,21 @@
 
         <div class="main">
           <div class="topbar">
+          <div>
             <div class="topbar-title" id="pageTitle">
               Dashboard
             </div>
-
+          
             <div
-                id="pageSubtitle"
-                style="
-                    font-size:8px;
-                    color:#666;
-                    margin-top:2px;
-                "
-            ></div>            
+              id="pageSubtitle"
+              style="
+                font-size:12px;
+                color:#666;
+                margin-top:2px;
+                line-height:1.2;
+              "
+            ></div>
+          </div>         
 
           <div class="user-box">
             <button
