@@ -1,6 +1,8 @@
 function renderTerminalSelectorTool()
 {
   document.getElementById("pageTitle").textContent = "Terminal Block Selector";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
   const content = document.getElementById("content");
 
