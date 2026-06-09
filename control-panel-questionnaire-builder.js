@@ -4,7 +4,7 @@ async function renderControlPanelQuestionnaireBuilderPlaceholder()
 
     document.getElementById("pageTitle").textContent = "Control Panel Questionnaire Builder";
 	
-    document.getElementById("pageSubtitle").textContent = "v26.06.09.01";
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.02";
 
     const content = document.getElementById("content");
 
@@ -1805,15 +1805,26 @@ function cpqbRenderTestQuestion(question, answers)
 	            ${options.map(function (option)
 	            {
 	                return `
-	                    <label style="display:inline-flex;gap:8px;align-items:center;justify-content:flex-start;width:auto;">
-	                        <input
-	                            type="checkbox"
-	                            value="${cpqEscapeHtml(option)}"
-	                            data-cpqb-test-question="${cpqbEscapeHtml(question.id)}"
-	                            ${values.includes(option) ? "checked" : ""}
-	                            style="margin:0;"
-	                        >
-	                        <span>${cpqEscapeHtml(option)}</span>
+	                    <label
+						    style="
+						        display:grid;
+						        grid-template-columns:20px 1fr;
+						        gap:8px;
+						        align-items:start;
+						        justify-items:start;
+						    "
+						>
+							<input
+							    ...
+							    style="
+							        margin:0;
+							        margin-top:3px;
+							    "
+							>
+							
+							<span>
+							    ${cpqEscapeHtml(option)}
+							</span>
 	                    </label>
 	                `;
 	            }).join("")}
