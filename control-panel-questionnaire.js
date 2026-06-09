@@ -96,23 +96,36 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
                         Project
                     </h3>
 
-                    <div class="form-group">
-                        <label>Continue Existing Project</label>
-
-                        <select id="cpqProjectSelect" class="tool-select">
-                            <option value="">Start a new project...</option>
-
-                            ${savedProjects.map(function (project)
-                            {
-                                return `
-                                    <option value="${cpqEscapeHtml(project.id)}" ${selectedProjectId === project.id ? "selected" : ""}>
-                                        ${cpqEscapeHtml(project.project_name || "Untitled Project")}
-                                        ${project.customer_name ? " - " + cpqEscapeHtml(project.customer_name) : ""}
-                                    </option>
-                                `;
-                            }).join("")}
-                        </select>
-                    </div>
+					<div class="form-group">
+					    <label>Continue Existing Project</label>
+					
+					    <div style="display:flex;gap:8px;align-items:center;">
+					        <select id="cpqProjectSelect" class="tool-select">
+					            <option value="">Start a new project...</option>
+					
+					            ${savedProjects.map(function (project)
+					            {
+					                return `
+					                    <option value="${cpqEscapeHtml(project.id)}" ${selectedProjectId === project.id ? "selected" : ""}>
+					                        ${cpqEscapeHtml(project.project_name || "Untitled Project")}
+					                        ${project.customer_name ? " - " + cpqEscapeHtml(project.customer_name) : ""}
+					                    </option>
+					                `;
+					            }).join("")}
+					        </select>
+					
+					        <button
+					            id="cpqDuplicateProjectBtn"
+					            class="login-button cpq-icon-button"
+					            type="button"
+					            title="Duplicate Project"
+					            aria-label="Duplicate Project"
+					            style="width:auto;background:#64748b;"
+					        >
+					            <i data-lucide="copy-plus"></i>
+					        </button>
+					    </div>
+					</div>
 
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
                         <div class="form-group">
@@ -162,6 +175,12 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
         `;
 
         bindEvents();
+
+		if (window.lucide)
+		{
+			window.lucide.createIcons();
+		}
+
     }
 
     function bindEvents()
@@ -261,7 +280,55 @@ function renderControlPanelQuestionnaireTool(activeQuestionnaire, savedProjects)
 			renderControlPanelEngineeringReportPlaceholder();
 		});
 
+		document.getElementById("cpqDuplicateProjectBtn").addEventListener("click", duplicateProject);
+
     }
+
+	function duplicateProject()
+	{
+	    if (!currentProject)
+	    {
+	        alert("Select an existing project to duplicate first.");
+	        return;
+	    }
+	
+	    const suggestedName = (currentProject.project_name || "Untitled Project") + " Copy";
+	
+	    cpqShowDuplicateProjectDialog(suggestedName, async function (newProjectName)
+	    {
+	        const copiedAnswers = cpqClone(currentProject.answers || {});
+	
+	        copiedAnswers.projectName = newProjectName;
+	
+	        const response = await sb
+	            .from("control_panel_projects")
+	            .insert({
+	                questionnaire_id: activeQuestionnaire.id,
+	                project_name: newProjectName,
+	                customer_name: currentProject.customer_name || copiedAnswers.customerName || "",
+	                answers: copiedAnswers,
+	                created_by: currentUser.id
+	            })
+	            .select("*")
+	            .single();
+	
+	        if (response.error)
+	        {
+	            throw response.error;
+	        }
+	
+	        currentProject = response.data;
+	        selectedProjectId = response.data.id;
+	        savedProjects.unshift(response.data);
+	
+	        answers = cpqClone(response.data.answers || {});
+	        helperAnswers = cpqClone(answers._helpers || {});
+	
+	        render();
+	
+	        alert("Project duplicated.");
+	    });
+	}	
 
     async function saveProject()
     {
@@ -913,6 +980,100 @@ function cpqShowDialog(title, bodyHtml, onSave, onOpen)
         if (shouldClose)
         {
             document.body.removeChild(overlay);
+        }
+    });
+}
+
+function cpqShowDuplicateProjectDialog(defaultName, onDuplicate)
+{
+    const overlay = document.createElement("div");
+
+    overlay.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.45);
+        z-index:9999;
+        display:flex;
+        align-items:flex-start;
+        justify-content:center;
+        overflow:auto;
+        padding:30px 12px;
+    `;
+
+    overlay.innerHTML = `
+        <div
+            style="
+                background:#fff;
+                width:min(520px,100%);
+                border-radius:14px;
+                padding:20px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.25);
+            "
+        >
+            <h2 style="margin-top:0;">
+                Duplicate Project
+            </h2>
+
+            <div class="form-group">
+                <label>New Project Name</label>
+                <input
+                    id="cpqDuplicateProjectName"
+                    class="tool-input"
+                    value="${cpqEscapeHtml(defaultName)}"
+                >
+            </div>
+
+            <div id="cpqDuplicateProjectStatus" class="status"></div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;">
+                <button id="cpqDuplicateProjectCancel" class="login-button" type="button" style="width:auto;background:#777;">
+                    Cancel
+                </button>
+
+                <button id="cpqDuplicateProjectSave" class="login-button" type="button" style="width:auto;background:#2e7d32;">
+                    Duplicate
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const nameInput = overlay.querySelector("#cpqDuplicateProjectName");
+    const status = overlay.querySelector("#cpqDuplicateProjectStatus");
+    const saveButton = overlay.querySelector("#cpqDuplicateProjectSave");
+
+    nameInput.focus();
+    nameInput.select();
+
+    overlay.querySelector("#cpqDuplicateProjectCancel").addEventListener("click", function ()
+    {
+        document.body.removeChild(overlay);
+    });
+
+    saveButton.addEventListener("click", async function ()
+    {
+        const newProjectName = nameInput.value.trim();
+
+        if (!newProjectName)
+        {
+            alert("Project name is required.");
+            return;
+        }
+
+        saveButton.disabled = true;
+        status.textContent = "Duplicating project...";
+
+        try
+        {
+            await onDuplicate(newProjectName);
+            document.body.removeChild(overlay);
+        }
+        catch (err)
+        {
+            console.error("Duplicate project error:", err);
+            saveButton.disabled = false;
+            status.textContent = "Could not duplicate project: " + err.message;
         }
     });
 }
