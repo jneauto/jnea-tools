@@ -318,6 +318,8 @@
   {
     document.getElementById("pageTitle").textContent = "Dashboard";
 
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
+
     document.getElementById("content").innerHTML = `
       <div class="card">
         <h2>
