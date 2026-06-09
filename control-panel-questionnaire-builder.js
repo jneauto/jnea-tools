@@ -1895,18 +1895,31 @@ function cpqbShowHelperTestDialog(parentQuestion, parentAnswers, helperAnswers)
 
     const latestOverlay = document.body.lastElementChild;
 
-    latestOverlay.querySelectorAll("[data-cpqb-test-helper-question]").forEach(function (input)
-    {
-        input.addEventListener("input", function ()
-        {
-            cpqbSetTestAnswer(input, subAnswers, "cpqbTestHelperQuestion");
-        });
-
-        input.addEventListener("change", function ()
-        {
-            cpqbSetTestAnswer(input, subAnswers, "cpqbTestHelperQuestion");
-        });
-    });
+	latestOverlay.querySelectorAll("[data-cpqb-test-helper-question]").forEach(function (input)
+	{
+	    input.addEventListener("input", function ()
+	    {
+	        cpqbSetTestAnswer(input, subAnswers, "cpqbTestHelperQuestion");
+	    });
+	
+	    input.addEventListener("change", function ()
+	    {
+	        cpqbSetTestAnswer(input, subAnswers, "cpqbTestHelperQuestion");
+	
+	        if (
+	            input.tagName === "SELECT" ||
+	            input.type === "checkbox" ||
+	            input.type === "radio"
+	        )
+	        {
+	            document.body.removeChild(latestOverlay);
+	
+	            helperAnswers[parentQuestion.id] = subAnswers;
+	
+	            cpqbShowHelperTestDialog(parentQuestion, parentAnswers, helperAnswers);
+	        }
+	    });
+	});
 
     latestOverlay.querySelector("#cpqbEvaluateHelperTestBtn").addEventListener("click", function ()
     {
