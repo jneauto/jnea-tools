@@ -4,7 +4,7 @@ async function renderControlPanelQuestionnaireBuilderPlaceholder()
 
     document.getElementById("pageTitle").textContent = "Control Panel Questionnaire Builder";
 	
-    document.getElementById("pageSubtitle").textContent = "v26.06.09.02";
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.03";
 
     const content = document.getElementById("content");
 
@@ -1751,6 +1751,24 @@ function cpqbShowQuestionTestDialog(question)
 
 function cpqbRenderTestQuestion(question, answers)
 {
+    return cpqbRenderTestQuestionBase(
+        question,
+        answers,
+        "data-cpqb-test-question"
+    );
+}
+
+function cpqbRenderTestQuestionForHelper(question, answers)
+{
+    return cpqbRenderTestQuestionBase(
+        question,
+        answers,
+        "data-cpqb-test-helper-question"
+    );
+}
+
+function cpqbRenderTestQuestionBase(question, answers, dataAttribute)
+{
     const value = answers[question.id] ?? question.defaultValue ?? "";
     const requiredLabel = question.required ? `<span style="color:#c62828;"> *</span>` : "";
 
@@ -1759,19 +1777,19 @@ function cpqbRenderTestQuestion(question, answers)
     if (question.type === "textarea")
     {
         inputHtml = `
-            <textarea class="tool-input" rows="4" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">${cpqbEscapeHtml(value)}</textarea>
+            <textarea class="tool-input" rows="4" ${dataAttribute}="${cpqbEscapeHtml(question.id)}">${cpqbEscapeHtml(value)}</textarea>
         `;
     }
     else if (question.type === "number")
     {
         inputHtml = `
-            <input class="tool-input" type="number" step="any" value="${cpqbEscapeHtml(value)}" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+            <input class="tool-input" type="number" step="any" value="${cpqbEscapeHtml(value)}" ${dataAttribute}="${cpqbEscapeHtml(question.id)}">
         `;
     }
     else if (question.type === "yesno")
     {
         inputHtml = `
-            <select class="tool-select" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+            <select class="tool-select" ${dataAttribute}="${cpqbEscapeHtml(question.id)}">
                 <option value="">Select...</option>
                 <option value="Yes" ${String(value) === "Yes" ? "selected" : ""}>Yes</option>
                 <option value="No" ${String(value) === "No" ? "selected" : ""}>No</option>
@@ -1782,7 +1800,7 @@ function cpqbRenderTestQuestion(question, answers)
     else if (question.type === "select")
     {
         inputHtml = `
-            <select class="tool-select" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+            <select class="tool-select" ${dataAttribute}="${cpqbEscapeHtml(question.id)}">
                 <option value="">Select...</option>
                 ${(question.options || []).map(function (option)
                 {
@@ -1795,54 +1813,55 @@ function cpqbRenderTestQuestion(question, answers)
             </select>
         `;
     }
-	else if (question.type === "multiselect")
-	{
-	    const options = Array.isArray(question.options) ? question.options : [];
-	    const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
-	
-	    inputHtml = `
-	        <div style="display:grid;gap:8px;justify-items:start;">
-	            ${options.map(function (option)
-	            {
-	                return `
-	                    <label
-						    style="
-						        display:grid;
-						        grid-template-columns:20px 1fr;
-						        gap:8px;
-						        align-items:start;
-						        justify-items:start;
-						    "
-						>
-							<input
-							    ...
-							    style="
-							        margin:0;
-							        margin-top:3px;
-							    "
-							>
-							
-							<span>
-							    ${cpqEscapeHtml(option)}
-							</span>
-	                    </label>
-	                `;
-	            }).join("")}
-	        </div>
-	    `;
-	}
+    else if (question.type === "multiselect")
+    {
+        const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
+
+        inputHtml = `
+            <div style="display:grid;gap:10px;justify-items:start;">
+                ${(question.options || []).map(function (option)
+                {
+                    return `
+                        <label
+                            style="
+                                display:grid;
+                                grid-template-columns:20px auto;
+                                gap:8px;
+                                align-items:start;
+                                justify-items:start;
+                                width:max-content;
+                                max-width:100%;
+                            "
+                        >
+                            <input
+                                type="checkbox"
+                                value="${cpqbEscapeHtml(option)}"
+                                ${dataAttribute}="${cpqbEscapeHtml(question.id)}"
+                                ${values.includes(option) ? "checked" : ""}
+                                style="margin:0;margin-top:3px;"
+                            >
+
+                            <span style="line-height:1.2;text-align:left;">
+                                ${cpqbEscapeHtml(option)}
+                            </span>
+                        </label>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    }
     else if (question.type === "output")
     {
         inputHtml = `
             <div class="status">
-                ${cpqbEscapeHtml(question.defaultValue || question.helpText || "Output text will display here.")}
+                ${cpqbEscapeHtml(question.defaultValue || question.helpText || question.helptext || question.label || "Output text will display here.")}
             </div>
         `;
     }
     else
     {
         inputHtml = `
-            <input class="tool-input" type="text" value="${cpqbEscapeHtml(value)}" data-cpqb-test-question="${cpqbEscapeHtml(question.id)}">
+            <input class="tool-input" type="text" value="${cpqbEscapeHtml(value)}" ${dataAttribute}="${cpqbEscapeHtml(question.id)}">
         `;
     }
 
@@ -1856,22 +1875,26 @@ function cpqbRenderTestQuestion(question, answers)
 
             ${inputHtml}
 
-            ${question.helpText ? `
+            ${question.helpText || question.helptext ? `
                 <div class="status">
-                    ${cpqbEscapeHtml(question.helpText)}
+                    ${cpqbEscapeHtml(question.helpText || question.helptext)}
                 </div>
             ` : ""}
 
-            ${question.helper ? `
-                <button
-                    type="button"
-                    class="login-button"
-                    data-cpqb-test-helper="${cpqbEscapeHtml(question.id)}"
-                    style="width:auto;margin-top:8px;background:#64748b;"
-                >
-                    ${cpqbEscapeHtml(question.helper.buttonLabel || "Help me decide")}
-                </button>
-            ` : ""}
+            ${
+                question.helper && dataAttribute === "data-cpqb-test-question"
+                    ? `
+                        <button
+                            type="button"
+                            class="login-button"
+                            data-cpqb-test-helper="${cpqbEscapeHtml(question.id)}"
+                            style="width:auto;margin-top:8px;background:#64748b;"
+                        >
+                            ${cpqbEscapeHtml(question.helper.buttonLabel || "Help me decide")}
+                        </button>
+                    `
+                    : ""
+            }
         </div>
     `;
 }
@@ -1967,111 +1990,6 @@ function cpqbShowHelperTestDialog(parentQuestion, parentAnswers, helperAnswers)
             </div>
         `;
     });
-}
-
-function cpqbRenderTestQuestionForHelper(question, answers)
-{
-    const value = answers[question.id] ?? question.defaultValue ?? "";
-    const requiredLabel = question.required ? `<span style="color:#c62828;"> *</span>` : "";
-
-    let inputHtml = "";
-
-    if (question.type === "textarea")
-    {
-        inputHtml = `
-            <textarea class="tool-input" rows="4" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">${cpqbEscapeHtml(value)}</textarea>
-        `;
-    }
-    else if (question.type === "number")
-    {
-        inputHtml = `
-            <input class="tool-input" type="number" step="any" value="${cpqbEscapeHtml(value)}" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
-        `;
-    }
-    else if (question.type === "yesno")
-    {
-        inputHtml = `
-            <select class="tool-select" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
-                <option value="">Select...</option>
-                <option value="Yes" ${String(value) === "Yes" ? "selected" : ""}>Yes</option>
-                <option value="No" ${String(value) === "No" ? "selected" : ""}>No</option>
-                <option value="Unknown" ${String(value) === "Unknown" ? "selected" : ""}>Unknown</option>
-            </select>
-        `;
-    }
-    else if (question.type === "select")
-    {
-        inputHtml = `
-            <select class="tool-select" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
-                <option value="">Select...</option>
-                ${(question.options || []).map(function (option)
-                {
-                    return `
-                        <option value="${cpqbEscapeHtml(option)}" ${String(value) === String(option) ? "selected" : ""}>
-                            ${cpqbEscapeHtml(option)}
-                        </option>
-                    `;
-                }).join("")}
-            </select>
-        `;
-    }
-	else if (question.type === "multiselect")
-	{
-	    const options = Array.isArray(question.options) ? question.options : [];
-	    const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
-	
-	    inputHtml = `
-	        <div style="display:grid;gap:8px;justify-items:start;">
-	            ${options.map(function (option)
-	            {
-	                return `
-	                    <label style="display:inline-flex;gap:8px;align-items:center;justify-content:flex-start;width:auto;">
-	                        <input
-	                            type="checkbox"
-	                            value="${cpqEscapeHtml(option)}"
-	                            data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}"
-	                            ${values.includes(option) ? "checked" : ""}
-	                            style="margin:0;"
-	                        >
-	                        <span>${cpqEscapeHtml(option)}</span>
-	                    </label>
-	                `;
-	            }).join("")}
-	        </div>
-	    `;
-	}
-    else if (question.type === "output")
-    {
-        inputHtml = `
-            <div class="status">
-                ${cpqbEscapeHtml(question.defaultValue || question.helpText || "Output text will display here.")}
-            </div>
-        `;
-    }
-    else
-    {
-        inputHtml = `
-            <input class="tool-input" type="text" value="${cpqbEscapeHtml(value)}" data-cpqb-test-helper-question="${cpqbEscapeHtml(question.id)}">
-        `;
-    }
-
-    return `
-        <div class="form-group">
-            <label>
-                ${cpqbEscapeHtml(question.label || question.id)}
-                ${requiredLabel}
-                ${question.unit ? ` (${cpqbEscapeHtml(question.unit)})` : ""}
-            </label>
-
-            ${inputHtml}
-
-            ${question.helpText || question.helptext ? `
-                <div class="status">
-                    ${cpqbEscapeHtml(question.helpText || question.helptext)}
-                </div>
-            ` : ""}
-        </div>
-    `;
 }
 
 function cpqbSetTestAnswer(input, answers, dataName)
