@@ -3,6 +3,8 @@ async function renderControlPanelQuestionnaireBuilderPlaceholder()
     const sb = window.jnea.sb;
 
     document.getElementById("pageTitle").textContent = "Control Panel Questionnaire Builder";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
     const content = document.getElementById("content");
 
