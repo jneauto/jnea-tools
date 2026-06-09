@@ -1,6 +1,8 @@
 function renderKnowledgePlaceholder()
 {
   document.getElementById("pageTitle").textContent = "Knowledge Files";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
   const content = document.getElementById("content");
 
