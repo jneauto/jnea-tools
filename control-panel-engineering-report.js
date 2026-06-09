@@ -4,6 +4,8 @@ async function renderControlPanelEngineeringReportPlaceholder()
     const currentUser = window.jnea.getCurrentUser();
 
     document.getElementById("pageTitle").textContent = "Industrial Control Panel Engineering Report";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
     const content = document.getElementById("content");
 
