@@ -5,7 +5,7 @@ async function renderControlPanelQuestionnairePlaceholder()
 
     document.getElementById("pageTitle").textContent = "Control Panel Questionnaire";
 	
-    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.01";
 
     const content = document.getElementById("content");
 
@@ -664,30 +664,31 @@ function cpqRenderQuestion(question, answers)
             </select>
         `;
     }
-    else if (question.type === "multiselect")
-    {
-        const options = Array.isArray(question.options) ? question.options : [];
-        const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
-
-        inputHtml = `
-            <div style="display:grid;gap:8px;">
-                ${options.map(function (option)
-                {
-                    return `
-                        <label style="display:flex;gap:8px;align-items:center;">
-                            <input
-                                type="checkbox"
-                                value="${cpqEscapeHtml(option)}"
-                                data-cpq-question="${cpqEscapeHtml(question.id)}"
-                                ${values.includes(option) ? "checked" : ""}
-                            >
-                            ${cpqEscapeHtml(option)}
-                        </label>
-                    `;
-                }).join("")}
-            </div>
-        `;
-    }
+	else if (question.type === "multiselect")
+	{
+	    const options = Array.isArray(question.options) ? question.options : [];
+	    const values = Array.isArray(value) ? value : String(value || "").split("|").filter(Boolean);
+	
+	    inputHtml = `
+	        <div style="display:grid;gap:8px;justify-items:start;">
+	            ${options.map(function (option)
+	            {
+	                return `
+	                    <label style="display:inline-flex;gap:8px;align-items:center;justify-content:flex-start;width:auto;">
+	                        <input
+	                            type="checkbox"
+	                            value="${cpqEscapeHtml(option)}"
+	                            data-cpq-question="${cpqEscapeHtml(question.id)}"
+	                            ${values.includes(option) ? "checked" : ""}
+	                            style="margin:0;"
+	                        >
+	                        <span>${cpqEscapeHtml(option)}</span>
+	                    </label>
+	                `;
+	            }).join("")}
+	        </div>
+	    `;
+	}
 	else if (question.type === "output")
 	{
 		inputHtml = `
