@@ -258,6 +258,15 @@
               Dashboard
             </div>
 
+            <div
+                id="pageSubtitle"
+                style="
+                    font-size:8px;
+                    color:#666;
+                    margin-top:2px;
+                "
+            ></div>            
+
           <div class="user-box">
             <button
               id="profileButton"
