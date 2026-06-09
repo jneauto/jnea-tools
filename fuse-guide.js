@@ -3,6 +3,8 @@ async function renderFuseGuidePlaceholder()
   const sb = window.jnea.sb;
 
   document.getElementById("pageTitle").textContent = "Fuse Guide";
+	
+    document.getElementById("pageSubtitle").textContent = "v26.06.09.00";
 
   const content = document.getElementById("content");
 
